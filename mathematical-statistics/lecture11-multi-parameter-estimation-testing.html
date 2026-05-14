@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数理统计 · 第11讲 · 多参数估计与检验</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8f9fa; color: #1a1a2e; line-height:1.7; }
+.container { max-width:960px; margin:0 auto; padding:20px; }
+.header { background: linear-gradient(135deg,#065f46 0%,#059669 100%); color:#fff; padding:40px 0; text-align:center; border-radius:0 0 20px 20px; margin-bottom:30px; }
+.header h1 { font-size:28px; margin-bottom:8px; }
+.header .sub { color:#a7f3d0; font-size:14px; }
+.header .info { color:#d1fae5; font-size:13px; margin-top:8px; }
+.card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size:20px; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #e2e8f0; }
+.card h2 .tag { font-size:12px; background:#059669; color:#fff; padding:2px 10px; border-radius:12px; margin-left:8px; vertical-align:middle; }
+.card h3 { font-size:16px; margin:16px 0 8px; color:#2d3748; }
+.toc { background:#edf2f7; border-radius:12px; padding:20px; margin-bottom:20px; }
+.toc h3 { font-size:16px; margin-bottom:12px; }
+.toc a { display:block; padding:4px 0; color:#065f46; text-decoration:none; font-size:14px; }
+.toc a:hover { text-decoration:underline; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+th { background:#edf2f7; text-align:left; padding:10px 12px; font-weight:600; }
+td { padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+pre { background:#1e1e2e; color:#cdd6f4; border-radius:8px; padding:16px; overflow-x:auto; font-size:13px; line-height:1.6; margin:12px 0; }
+code { font-family:'JetBrains Mono','Fira Code',monospace; }
+:not(pre) > code { background:#edf2f7; padding:2px 6px; border-radius:4px; font-size:13px; }
+.info-box { background:#ebf8ff; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.warn-box { background:#fff5f5; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.tip-box { background:#f0fff4; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.quiz { margin:12px 0; padding:14px; background:#faf5ff; border-radius:8px; border-left:3px solid #059669; }
+.quiz p { font-weight:500; }
+.quiz .answer { display:none; margin-top:8px; padding:10px; background:#fff; border-radius:6px; font-size:14px; }
+.quiz .toggle-btn { background:#059669; color:#fff; border:none; padding:4px 14px; border-radius:4px; cursor:pointer; font-size:12px; margin-top:6px; }
+.footer { text-align:center; font-size:12px; color:#a0aec0; padding:30px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>数理统计 · 第11讲</h1>
+  <div class="sub">多参数估计与检验</div>
+  <div class="info">上海财经大学 · 信息管理与工程学院 · 袁洪松</div>
+</div>
+
+<div class="toc">
+  <h3>知识地图</h3>
+  <a href="#scope">0 本讲范围</a>
+  <a href="#mle">1 多参数 MLE</a>
+  <a href="#fisher">2 Fisher 信息矩阵</a>
+  <a href="#rcb">3 Rao-Cramer 下界</a>
+  <a href="#examples-mle">4 MLE 例题详解</a>
+  <a href="#multinomial">5 多项分布</a>
+  <a href="#tests">6 多参数检验</a>
+  <a href="#lrt">7 LRT 详解</a>
+  <a href="#anova">8 方差分析</a>
+  <a href="#mistakes">9 易错点</a>
+  <a href="#quiz">10 自测题</a>
+</div>
+
+<!-- ========== 0 ========== -->
+<div class="card" id="scope">
+<h2>0 本讲范围</h2>
+<p><strong>来源：</strong>课件第1页</p>
+<table>
+<tr><th>项目</th><th>内容</th></tr>
+<tr><td>课程</td><td>数理统计 · 第十一讲</td></tr>
+<tr><td>教师</td><td>袁洪松</td></tr>
+<tr><td>主题</td><td>多参数估计与检验</td></tr>
+<tr><td>预习</td><td>Hogg Section 6.4, 6.5</td></tr>
+<tr><td>内容概览</td><td>多参数 MLE → Fisher 信息矩阵 → Rao-Cramer 下界 → 多参数检验 (LRT / Wald / Score) → 方差分析 → 例子</td></tr>
+</table>
+
+<div class="info-box">
+<strong>与前后章节的关系</strong><br>
+前几讲是单参数估计与检验（一个未知参数 θ）。<br>
+本讲扩展到多参数 θ = (θ₁, ..., θₚ)′，比如正态分布同时估计 μ 和 σ²。<br>
+后续会用到这些方法做回归分析、多元分析。
+</div>
+</div>
+
+<!-- ========== 1 ========== -->
+<div class="card" id="mle">
+<h2>1 多参数 MLE</h2>
+<p><strong>来源：</strong>课件第1页</p>
+
+<p>当参数 θ ∈ Ω ⊂ ℝᵖ 是 p 维向量时，MLE 需要解 p 个方程：</p>
+
+<div class="info-box">
+<strong>似然函数</strong>：L(θ) = ∏ f(Xᵢ; θ)<br>
+<strong>对数似然</strong>：l(θ) = ∑ log f(Xᵢ; θ)<br>
+<strong>MLE 条件</strong>：∂L/∂θₖ = 0 或 ∂l/∂θₖ = 0, k = 1, ..., p
+</div>
+
+<h3>例：正态分布 N(μ, σ²)</h3>
+<p><strong>来源：</strong>课件第1-2页</p>
+<p>参数 θ = (μ, v)′，v = σ²</p>
+
+<div class="info-box">
+l(θ) = −n/2·log 2π − n/2·log v − 1/(2v)·∑(Xᵢ − μ)²<br><br>
+∂l/∂μ = 1/v · ∑(Xᵢ − μ) = 0   →   <strong>ˆμ = X̄</strong>（无偏）<br>
+∂l/∂v = −n/(2v) + 1/(2v²)·∑(Xᵢ − μ)² = 0   →   <strong>ˆv = 1/n·∑(Xᵢ − X̄)²</strong>（有偏）
+</div>
+
+<h3>例：一般拉普拉斯分布</h3>
+<p><strong>来源：</strong>课件第2页</p>
+<p>f(x) = 1/(2b)·e^−|x−a|/b，参数 θ = (a, b)′</p>
+
+<div class="info-box">
+l(a, b) = −n log 2 − n log b − ∑|Xᵢ − a|/b<br><br>
+∂l/∂a = 1/b·∑ sgn(Xᵢ − a) = 0   →   <strong>â = median{X₁, ..., Xₙ}</strong><br>
+∂l/∂b = −n/b + 1/b²·∑|Xᵢ − a| = 0   →   <strong>b̂ = 1/n·∑|Xᵢ − Q₂|</strong>
+</div>
+
+<div class="tip-box">
+<strong>💡 要点</strong>：正态分布 MLE 的 ˆμ = X̄ 无偏，ˆσ² 有偏（分母是 n 而不是 n−1）。拉普拉斯分布的 â 是样本中位数，不是均值。
+</div>
+</div>
+
+<!-- ========== 2 ========== -->
+<div class="card" id="fisher">
+<h2>2 Fisher 信息矩阵</h2>
+<p><strong>来源：</strong>课件第2-3页</p>
+
+<p>在多参数情况下，Fisher 信息量是一个 <strong>p × p 矩阵</strong>：</p>
+
+<div class="info-box">
+<strong>定义</strong>：I(θ) = Cov{∇ log f(X; θ)}<br><br>
+第 (j, k) 分量：<br>
+<strong>Iⱼₖ(θ)</strong> = Cov(∂/∂θⱼ log f, ∂/∂θₖ log f)<br><br>
+两个等价计算公式：<br>
+① Iⱼₖ(θ) = E[(∂/∂θⱼ log f) · (∂/∂θₖ log f)]<br>
+② Iⱼₖ(θ) = −E[∂²/∂θⱼ∂θₖ log f(X; θ)]
+</div>
+
+<div class="info-box">
+<strong>例：正态分布</strong><br>
+θ = (μ, v)′，可算得：<br>
+I(θ) = [1/v     0   ]<br>
+&emsp;&emsp;&emsp;[0    1/(2v²)]<br>
+I(θ)⁻¹ = [v     0   ]<br>
+&emsp;&emsp;&emsp;&ensp;[0    2v²]
+</div>
+</div>
+
+<!-- ========== 3 ========== -->
+<div class="card" id="rcb">
+<h2>3 Rao-Cramer 下界 (RCB)</h2>
+<p><strong>来源：</strong>课件第3页</p>
+
+<div class="info-box">
+<strong>Rao-Cramer 下界</strong>：若 Yⱼ = uⱼ(X₁, ..., Xₙ) 是 θⱼ 的无偏估计，则<br>
+<strong>Var(Yⱼ) ≥ 1/n · [I⁻¹(θ)]ⱼⱼ</strong><br><br>
+其中 [I⁻¹(θ)]ⱼⱼ 是 Fisher 信息矩阵的逆矩阵的第 j 个对角元。
+</div>
+
+<table>
+<tr><th>概念</th><th>定义</th><th>来源页</th></tr>
+<tr><td><strong>有效估计量</strong></td><td>无偏且方差达到 RCB</td><td>p3</td></tr>
+<tr><td><strong>有效性</strong></td><td>[I⁻¹(θ)]ⱼⱼ / {n·Var(Yⱼ)}（越接近 1 越好）</td><td>p3</td></tr>
+<tr><td><strong>渐进有效</strong></td><td>样本量 n → ∞ 时有效性 → 1</td><td>p4</td></tr>
+</table>
+
+<h3>例：正态分布 ˆμ 和 S²</h3>
+<p><strong>来源：</strong>课件第3-4页</p>
+<div class="info-box">
+<strong>ˆμ = X̄</strong>：Var(ˆμ) = v/n = RCB → <strong>有效估计</strong> ✅<br><br>
+<strong>S² = nˆv/(n−1)</strong>：<br>
+(n−1)S²/v ∼ χ²(n−1) → Var(S²) = 2v²/(n−1)<br>
+RCB = 2v²/n<br>
+Var(S²) &gt; RCB → <strong>不是有效估计</strong><br>
+有效性 = (n−1)/n → <strong>渐进有效</strong>（n→∞ 时 → 1）
+</div>
+</div>
+
+<!-- ========== 4 ========== -->
+<div class="card" id="examples-mle">
+<h2>4 MLE 例题详解</h2>
+
+<h3>正态分布完整流程（考试标准步骤）</h3>
+<pre><code>Step 1: 写出似然函数
+L(μ,σ²) = (2πσ²)^(−n/2) · exp{−∑(Xᵢ−μ)²/(2σ²)}
+
+Step 2: 取对数
+l = −n/2·log(2π) − n/2·log(σ²) − ∑(Xᵢ−μ)²/(2σ²)
+
+Step 3: 对 μ 求偏导 → 0
+∂l/∂μ = ∑(Xᵢ−μ)/σ² = 0  →  ˆμ = X̄
+
+Step 4: 对 σ² 求偏导 → 0  
+∂l/∂σ² = −n/(2σ²) + ∑(Xᵢ−μ)²/(2σ⁴) = 0
+→ ˆσ² = ∑(Xᵢ−X̄)²/n
+
+Step 5: 验证 Fisher 信息矩阵
+I(θ) = diag(1/σ², 1/(2σ⁴))
+
+Step 6: RCB
+Var(ˆμ) = σ²/n = [I⁻¹]₁₁/n  → 有效
+Var(S²) = 2σ⁴/(n−1) > 2σ⁴/n = RCB → 渐进有效</code></pre>
+
+<div class="warn-box">
+<strong>⚠️ 考试注意</strong>：正态分布 MLE 的 ˆσ² = 1/n·∑(Xᵢ−X̄)² 是<strong>有偏</strong>的，纠偏后 S² = 1/(n−1)·∑(Xᵢ−X̄)² 无偏但不是有效估计（渐进有效）。
+</div>
+</div>
+
+<!-- ========== 5 ========== -->
+<div class="card" id="multinomial">
+<h2>5 多项分布</h2>
+<p><strong>来源：</strong>课件第4-6页</p>
+
+<table>
+<tr><th>项目</th><th>内容</th></tr>
+<tr><td>试验</td><td>k 种结果，概率 p₁, ..., pₖ（∑pⱼ = 1）</td></tr>
+<tr><td>参数</td><td>p = (p₁, ..., pₖ₋₁)′（pₖ = 1 − ∑pⱼ 被决定）</td></tr>
+<tr><td>单次 p.m.f.</td><td>f(x;p) = ∏ pᵢˣⁱ · (1−∑pⱼ)^(1−∑xⱼ)</td></tr>
+<tr><td>MLE</td><td>ˆpₕ = Tₕ/n，Tₕ = ∑Xₕᵢ ∼ Bin(n, pₕ)</td></tr>
+<tr><td>性质</td><td>无偏 + 方差 = RCB → <strong>有效估计</strong></td></tr>
+</table>
+
+<div class="info-box">
+<strong>Fisher 信息矩阵</strong>（k−1 维）：<br>
+对角元：Iᵢᵢ = 1/pᵢ + 1/pₖ<br>
+非对角：Iᵢₕ = 1/pₖ (i ≠ h)<br><br>
+逆矩阵：<br>
+[I⁻¹]ᵢᵢ = pᵢ(1−pᵢ)<br>
+[I⁻¹]ᵢₕ = −pᵢpₕ (i ≠ h)
+</div>
+</div>
+
+<!-- ========== 6 ========== -->
+<div class="card" id="tests">
+<h2>6 多参数检验</h2>
+<p><strong>来源：</strong>课件第6-7页</p>
+
+<h3>检验 H₀: θ = θ₀ vs H₁: θ ≠ θ₀</h3>
+
+<table>
+<tr><th>方法</th><th>统计量</th><th>渐近分布</th></tr>
+<tr><td><strong>① 似然比检验 (LRT)</strong></td><td>χ²_L = −2 log Λ = 2[l(ˆθ) − l(θ₀)]</td><td>χ²(p)</td></tr>
+<tr><td><strong>② Wald 检验</strong></td><td>χ²_W = (ˆθ−θ₀)′[nI(ˆθ)](ˆθ−θ₀)</td><td>χ²(p)</td></tr>
+<tr><td><strong>③ Score 检验</strong></td><td>χ²_R = {∇l(θ₀)}′[nI(θ₀)]⁻¹{∇l(θ₀)}</td><td>χ²(p)</td></tr>
+</table>
+
+<h3>检验 H₀: θ ∈ ω vs H₁: θ ∈ Ω\ω</h3>
+<p>ω 由 q 个约束定义（0 &lt; q ≤ p）：g₁(θ)=a₁, ..., g_q(θ)=a_q</p>
+
+<div class="info-box">
+<strong>LRT 统计量</strong>：Λ = max_{θ∈ω} L(θ) / max_{θ∈Ω} L(θ) = L(ˆω) / L(ˆΩ)<br>
+拒绝域：{Λ ≤ c} 或等价地 {−2 log Λ ≥ χ²_α(q)}<br><br>
+<strong>定理 (Hogg 6.5.1)</strong>：在正则条件下，H₀ 成立时<br>
+<strong>−2 log Λ  →ᵈ  χ²(q)</strong>
+</div>
+</div>
+
+<!-- ========== 7 ========== -->
+<div class="card" id="lrt">
+<h2>7 LRT 详解</h2>
+<p><strong>来源：</strong>课件第7-8页</p>
+
+<h3>例：正态分布，方差未知，检验 μ = μ₀</h3>
+
+<pre><code>问题：X₁,...,Xₙ ∼ N(μ, σ²)，σ² 未知
+H₀: μ = μ₀  vs  H₁: μ ≠ μ₀
+
+Step 1: 无约束 MLE (Ω)
+ˆμ = X̄,  ˆσ² = 1/n·∑(Xᵢ−X̄)²
+L(ˆΩ) = (2πˆσ²)^(−n/2)·e^(−n/2)
+
+Step 2: 约束 MLE (ω: μ = μ₀)
+ˆμ₀ = μ₀,  ˆσ₀² = 1/n·∑(Xᵢ−μ₀)²
+L(ˆω) = (2πˆσ₀²)^(−n/2)·e^(−n/2)
+
+Step 3: LRT 统计量
+Λ = L(ˆω)/L(ˆΩ) = (ˆσ²/ˆσ₀²)^(n/2)
+
+Step 4: 化简
+∑(Xᵢ−μ₀)² = ∑(Xᵢ−X̄)² + n(X̄−μ₀)²
+→ Λ = [1 / (1 + n(X̄−μ₀)²/∑(Xᵢ−X̄)²)]^(n/2)
+
+Step 5: 等价拒绝域
+→ {√n|X̄−μ₀|/√[∑(Xᵢ−X̄)²/(n−1)] ≥ c}
+→ {|X̄−μ₀|/(S/√n) ≥ c}  — <strong>这就是 t-检验！</strong></code></pre>
+
+<div class="tip-box">
+<strong>💡 关键理解</strong>：LRT 推导出了 t-检验。这说明了 LRT 的"似然比"思路等价于经典检验方法。考试中可能会让你推导类似的等价关系。
+</div>
+</div>
+
+<!-- ========== 8 ========== -->
+<div class="card" id="anova">
+<h2>8 方差分析 (ANOVA)</h2>
+<p><strong>来源：</strong>课件第8-10页</p>
+
+<h3>单因素方差分析</h3>
+<table>
+<tr><th>项目</th><th>内容</th></tr>
+<tr><td>假设</td><td>r 个独立正态总体 N(μᵢ, σ²)，第 i 组有 nᵢ 个样本</td></tr>
+<tr><td>H₀</td><td>μ₁ = μ₂ = ... = μᵣ</td></tr>
+<tr><td>无约束 MLE</td><td>ˆμᵢ = X̄ᵢ·，˜σ² = SE/n</td></tr>
+<tr><td>约束 MLE (H₀)</td><td>ˆμ = X̄，˜σ′² = ST/n</td></tr>
+<tr><td>LRT 统计量</td><td>χ²_L = n log(ST/SE) = n log(1 + SA/SE)</td></tr>
+<tr><td>精确 F 检验</td><td>F = [SA/(r−1)] / [SE/(n−r)] ∼ F(r−1, n−r)</td></tr>
+<tr><td>近似 LRT</td><td>{χ²_L ≥ χ²_α(r−1)}</td></tr>
+</table>
+
+<div class="info-box">
+<strong>记号说明</strong>：<br>
+SE = ∑∑(Xᵢⱼ − X̄ᵢ·)²（组内平方和）<br>
+SA = ∑nᵢ(X̄ᵢ· − X̄)²（组间平方和）<br>
+ST = SE + SA（总平方和）
+</div>
+
+<h3>例：总统选举（多项分布检验）</h3>
+<p><strong>来源：</strong>课件第10页</p>
+<p>k=3 位候选人，检验 H₀: p₁ = p₂</p>
+<div class="info-box">
+<strong>LRT 统计量</strong>：<br>
+χ²_L = 2[T₁ log(2ˆp₁/(ˆp₁+ˆp₂)) + T₂ log(2ˆp₂/(ˆp₁+ˆp₂))]<br><br>
+拒绝域：{χ²_L &gt; χ²_α(1)}<br><br>
+其中 ˆpⱼ = Tⱼ/n，Tⱼ = ∑Xⱼᵢ
+</div>
+</div>
+
+<!-- ========== 9 ========== -->
+<div class="card" id="mistakes">
+<h2>9 易错点</h2>
+
+<table>
+<tr><th>#</th><th>易错点</th><th>正确理解</th><th>来源</th></tr>
+<tr><td>1</td><td><b>多参数 MLE 有偏/无偏混淆</b></td><td>ˆμ = X̄ 无偏；ˆσ² = 1/n·∑(Xᵢ−X̄)² <strong>有偏</strong>，纠偏后 S² 无偏但不有效</td><td>p1-2</td></tr>
+<tr><td>2</td><td><b>Fisher 信息矩阵维度搞错</b></td><td>p 个参数 → p×p 矩阵，非对角元素不能忽略</td><td>p2-3</td></tr>
+<tr><td>3</td><td><b>RCB 是矩阵的逆的对角元</b></td><td>Var(ˆθⱼ) ≥ 1/n·[I⁻¹(θ)]ⱼⱼ，不是 1/(n·Iⱼⱼ)</td><td>p3</td></tr>
+<tr><td>4</td><td><b>LRT 统计量自由度</b></td><td>H₀: θ=θ₀ 时 df = p（参数个数）；H₀ 有 q 个约束时 df = q</td><td>p6-7</td></tr>
+<tr><td>5</td><td><b>混淆三种检验</b></td><td>LRT 用似然函数比值；Wald 用 ˆθ 与 θ₀ 的距离；Score 用梯度在 θ₀ 的值</td><td>p6-7</td></tr>
+<tr><td>6</td><td><b>多项分布自由度假定错</b></td><td>k 种结果 → 参数维度 k−1，不是 k。因为 ∑pⱼ = 1</td><td>p4-6</td></tr>
+</table>
+</div>
+
+<!-- ========== 10 ========== -->
+<div class="card" id="quiz">
+<h2>10 自测题</h2>
+
+<div class="quiz">
+<p><strong>题1</strong>：正态分布 N(μ, σ²) 的 MLE ˆμ 和 ˆσ² 哪个是有偏的？如何纠偏？纠偏后的估计量是有效估计吗？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+ˆμ 无偏。ˆσ² = 1/n·∑(Xᵢ−X̄)² 有偏（分母 n），纠偏后 S² = 1/(n−1)·∑(Xᵢ−X̄)² 无偏。<br><br>
+S² 不是有效估计：Var(S²) = 2σ⁴/(n−1) &gt; RCB = 2σ⁴/n。<br>
+有效性 = (n−1)/n → 渐进有效。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题2</strong>：有两个参数 θ = (θ₁, θ₂)′。Fisher 信息矩阵 I(θ) 是几乘几的矩阵？RCB 公式中的 [I⁻¹(θ)]₁₁ 是什么？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+I(θ) 是 2×2 矩阵。Var(ˆθ₁) ≥ 1/n·[I⁻¹(θ)]₁₁，其中 [I⁻¹(θ)]₁₁ 是逆矩阵的 (1,1) 元素。<br><br>
+注意不是 1/(n·I₁₁) ！因为 I 不是对角矩阵时，逆矩阵的对角元 ≠ 原矩阵对角元的倒数。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题3</strong>：LRT 的 −2 log Λ 在 H₀ 下渐近服从什么分布？自由度是多少？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+−2 log Λ →ᵈ χ²(q)，其中 q 是 H₀ 下约束条件的个数。<br>
+例：H₀: μ=μ₀（1个约束）→ q=1<br>
+H₀: μ₁=μ₂=...=μᵣ（r−1个约束）→ q=r−1
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题4（推导）</strong>：从正态分布 LRT 出发，推导出 t-检验的拒绝域。关键步骤是什么？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+关键步骤：展开 ∑(Xᵢ−μ₀)² = ∑(Xᵢ−X̄)² + n(X̄−μ₀)²<br><br>
+得到 Λ = [1 / (1 + n(X̄−μ₀)²/∑(Xᵢ−X̄)²)]^(n/2)<br>
+→ {Λ ≤ c} 等价于 {|X̄−μ₀|/(S/√n) ≥ c₂}<br>
+这正是 t-检验的拒绝域形式。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题5</strong>：多参数检验的三种方法（LRT、Wald、Score）分别在什么时候更方便？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+<strong>LRT</strong>：最通用，但需要同时计算约束和无约束 MLE<br>
+<strong>Wald</strong>：只需要无约束 MLE（ˆθ），适合约束复杂的假设<br>
+<strong>Score</strong>：只需要约束 MLE（θ₀），适合约束下计算简单的假设<br><br>
+三者渐近等价，但小样本下表现不同。
+</div>
+</div>
+</div>
+
+<div class="footer">
+school-notes/mathematical-statistics/ · 上海财经大学 · 袁洪松 · 第11讲<br>
+配合课件 Hogg Section 6.4, 6.5 一起看效果最好
+</div>
+
+</div>
+<script>
+document.querySelectorAll('.toggle-btn').forEach(function(b){b.addEventListener('click',function(){var a=this.nextElementSibling;if(a&&a.classList.contains('answer'))a.style.display='block'})});
+</script>
+</body>
+</html>
