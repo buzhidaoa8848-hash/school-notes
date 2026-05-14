@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastAPI · 从零到部署</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8f9fa; color: #1a1a2e; line-height:1.7; }
+.container { max-width:960px; margin:0 auto; padding:20px; }
+.header { background: linear-gradient(135deg,#0d6a4f 0%,#2d6a4f 100%); color:#fff; padding:40px 0; text-align:center; border-radius:0 0 20px 20px; margin-bottom:30px; }
+.header h1 { font-size:28px; margin-bottom:8px; }
+.header .sub { color:#a0e0c0; font-size:14px; }
+.card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size:20px; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #e2e8f0; }
+.card h3 { font-size:16px; margin:16px 0 8px; color:#2d3748; }
+.toc { background:#edf2f7; border-radius:12px; padding:20px; margin-bottom:20px; }
+.toc h3 { font-size:16px; margin-bottom:12px; }
+.toc a { display:block; padding:4px 0; color:#2b6cb0; text-decoration:none; font-size:14px; }
+.toc a:hover { color:#1a365d; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+th { background:#edf2f7; text-align:left; padding:10px 12px; font-weight:600; }
+td { padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+pre { background:#1e1e2e; color:#cdd6f4; border-radius:8px; padding:16px; overflow-x:auto; font-size:13px; line-height:1.6; margin:12px 0; }
+code { font-family:'JetBrains Mono','Fira Code',monospace; }
+:not(pre) > code { background:#edf2f7; padding:2px 6px; border-radius:4px; font-size:13px; }
+.info-box { background:#ebf8ff; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.warn-box { background:#fff5f5; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.tip-box { background:#f0fff4; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.quiz { margin:12px 0; padding:14px; background:#faf5ff; border-radius:8px; border-left:3px solid #805ad5; }
+.quiz p { font-weight:500; }
+.quiz .answer { display:none; margin-top:8px; padding:10px; background:#fff; border-radius:6px; font-size:14px; }
+.quiz .toggle-btn { background:#805ad5; color:#fff; border:none; padding:4px 14px; border-radius:4px; cursor:pointer; font-size:12px; margin-top:6px; }
+.quiz .toggle-btn:hover { background:#6b46c1; }
+.step { display:flex; align-items:flex-start; gap:12px; margin:8px 0; }
+.step-num { background:#0d6a4f; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; margin-top:2px; }
+.footer { text-align:center; font-size:12px; color:#a0aec0; padding:30px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1> FastAPI · 从零到部署</h1>
+  <div class="sub">Python async web framework · 自动文档 · 类型安全 · 高性能</div>
+</div>
+
+<div class="toc">
+  <h3>学习地图</h3>
+  <a href="#why">1 为什么是 FastAPI</a>
+  <a href="#setup">2 环境搭建</a>
+  <a href="#basics">3 基础：路由与请求</a>
+  <a href="#pydantic">4 Pydantic 模型</a>
+  <a href="#db">5 数据库集成</a>
+  <a href="#project">6 实战：抑郁筛查 API</a>
+  <a href="#deploy">7 部署</a>
+  <a href="#mistakes">8 易错点</a>
+  <a href="#quiz">9 自测题</a>
+</div>
+
+<!-- ========== 1 ========== -->
+<div class="card" id="why">
+<h2>1 为什么是 FastAPI</h2>
+
+<table>
+<tr><th>对比</th><th>FastAPI</th><th>Flask</th><th>Django</th></tr>
+<tr><td>性能</td><td>⭐ 异步原生 (ASGI)</td><td>同步 (WSGI)</td><td>同步 (WSGI)</td></tr>
+<tr><td>自动文档</td><td>⭐ 自动生成 Swagger UI</td><td>需第三方</td><td>需第三方</td></tr>
+<tr><td>类型检查</td><td>⭐ Pydantic + 类型提示</td><td>无</td><td>无</td></tr>
+<tr><td>学习曲线</td><td>低（10分钟上手）</td><td>低</td><td>高（全家桶）</td></tr>
+<tr><td>适用场景</td><td>API 服务、微服务</td><td>小项目、原型</td><td>大型单体应用</td></tr>
+</table>
+
+<div class="info-box">
+<strong>总结</strong>：你要做 AI 应用（抑郁筛查 API），FastAPI 是最佳选择——自动文档方便调试，异步支持高并发，类型安全减少 bug。
+</div>
+</div>
+
+<!-- ========== 2 ========== -->
+<div class="card" id="setup">
+<h2>2 环境搭建</h2>
+
+<pre><code># 1. 创建项目目录
+mkdir fastapi-project && cd fastapi-project
+
+# 2. 创建虚拟环境
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. 安装 FastAPI
+pip install "fastapi[standard]"
+
+# 4. 验证安装
+python -c "import fastapi; print(fastapi.__version__)"</code></pre>
+
+<div class="tip-box">
+<strong>💡</strong> 如果 Hermes 环境里没有 pip，用 <code>python3 -m pip install --break-system-packages</code>
+</div>
+
+<p><strong>创建第一个文件 <code>main.py</code>：</strong></p>
+<pre><code>from fastapi import FastAPI
+
+app = FastAPI(title="我的第一个 API")
+
+@app.get("/")
+def root():
+    return {"message": "Hello, FastAPI!"}</code></pre>
+
+<pre><code># 启动服务器
+fastapi dev main.py
+
+# 打开浏览器访问：
+# http://127.0.0.1:8000      → 你的 API
+# http://127.0.0.1:8000/docs → 自动生成的 Swagger UI</code></pre>
+</div>
+
+<!-- ========== 3 ========== -->
+<div class="card" id="basics">
+<h2>3 基础：路由与请求</h2>
+
+<h3>3.1 HTTP 方法</h3>
+<pre><code>@app.get("/items")         # GET → 获取资源
+@app.post("/items")        # POST → 创建资源
+@app.put("/items/{id}")    # PUT → 更新资源
+@app.delete("/items/{id}") # DELETE → 删除资源</code></pre>
+
+<h3>3.2 路径参数</h3>
+<pre><code>@app.get("/users/{user_id}")
+def get_user(user_id: int):          # 类型自动校验！
+    return {"user_id": user_id}
+
+# 访问 /users/42 → {"user_id": 42}
+# 访问 /users/abc → 422 错误（类型不对）</code></pre>
+
+<h3>3.3 查询参数</h3>
+<pre><code>@app.get("/search")
+def search(q: str = "", limit: int = 10):
+    return {"query": q, "limit": limit}
+
+# 访问 /search?q=depression&limit=5</code></pre>
+
+<h3>3.4 请求体（用 Pydantic）</h3>
+<pre><code>from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    price: float
+    in_stock: bool = True  # 默认值
+
+@app.post("/items")
+def create_item(item: Item):
+    return {"received": item, "total": item.price * 1.1}</code></pre>
+
+<div class="info-box">
+<strong>关键理解</strong>：FastAPI 会根据类型自动做三件事——<br>
+① 校验请求数据（类型不对直接返回 422）<br>
+② 生成 API 文档（Swagger UI 上能看到请求格式）<br>
+③ 自动补全（IDE 里能提示字段名）
+</div>
+</div>
+
+<!-- ========== 4 ========== -->
+<div class="card" id="pydantic">
+<h2>4 Pydantic 模型</h2>
+
+<p>Pydantic 是 FastAPI 的核心——用 Python 类型定义数据模型，自动做校验和序列化。</p>
+
+<h3>基础模型</h3>
+<pre><code>from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+
+class Patient(BaseModel):
+    id: int
+    name: str
+    age: int
+    phq8_score: Optional[float] = None   # 可选字段
+    created_at: datetime = datetime.now() # 默认值
+
+class ScreeningResult(BaseModel):
+    patient_id: int
+    risk_level: str  # "low" / "medium" / "high"
+    confidence: float
+    symptoms: list[str]  # 症状列表</code></pre>
+
+<h3>嵌套模型</h3>
+<pre><code>class Session(BaseModel):
+    session_id: str
+    utterances: list[Utterance]  # Utterance 是另一个模型
+
+class Utterance(BaseModel):
+    speaker: str       # "patient" / "therapist"
+    text: str
+    timestamp: float</code></pre>
+
+<h3>校验器</h3>
+<pre><code>from pydantic import field_validator
+
+class Patient(BaseModel):
+    name: str
+    age: int
+
+    @field_validator("age")
+    @classmethod
+    def check_age(cls, v):
+        if v < 0 or v > 150:
+            raise ValueError("年龄必须在 0-150 之间")
+        return v</code></pre>
+
+<div class="warn-box">
+<strong>⚠️</strong> Pydantic v2 的校验器写法变了——用 <code>@field_validator</code> 代替 v1 的 <code>@validator</code>。
+</div>
+</div>
+
+<!-- ========== 5 ========== -->
+<div class="card" id="db">
+<h2>5 数据库集成</h2>
+
+<h3>SQLite + SQLAlchemy（最简单的方案）</h3>
+<pre><code># database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+DATABASE_URL = "sqlite:///./screening.db"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine)</code></pre>
+
+<pre><code># models.py
+from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+class Patient(Base):
+    __tablename__ = "patients"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    phq8_score = Column(Float, nullable=True)
+    risk_level = Column(String)</code></pre>
+
+<h3>Dependency Injection（FastAPI 精髓）</h3>
+<pre><code>from fastapi import Depends
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.get("/patients/{patient_id}")
+def get_patient(patient_id: int, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        return {"error": "not found"}
+    return patient</code></pre>
+
+<div class="info-box">
+<strong>Depends 是什么？</strong><br>
+FastAPI 的依赖注入系统——你声明参数类型为 <code>Session = Depends(get_db)</code>，FastAPI 自动调用 <code>get_db()</code> 获取数据库连接，请求结束后自动关闭。不用手动管理数据库生命周期。
+</div>
+</div>
+
+<!-- ========== 6 ========== -->
+<div class="card" id="project">
+<h2>6 实战：抑郁筛查 API</h2>
+
+<p>把大创模型封装成一个完整的 API 服务。</p>
+
+<pre><code># main.py — 完整示例
+from fastapi import FastAPI, Depends, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+import sqlite3, json
+
+app = FastAPI(title="DAIC-WOZ 抑郁筛查服务")
+
+# ── 数据模型 ──
+class ScreeningInput(BaseModel):
+    text: str                         # 访谈文本
+    audio_features: list[float]       # 语音特征（wav2vec2 输出）
+    facial_features: Optional[list[float]] = None  # 面部特征
+
+class ScreeningOutput(BaseModel):
+    phq8_score: float                 # 预测 PHQ-8 分数
+    risk_level: str                   # low / medium / high
+    confidence: float                 # 置信度
+    key_symptoms: list[str]           # 关键症状
+
+# ── 模拟模型（替换为真实模型） ──
+def predict(input: ScreeningInput) -> ScreeningOutput:
+    # 这里是你的 MIL 模型推理逻辑
+    return ScreeningOutput(
+        phq8_score=12.5,
+        risk_level="high",
+        confidence=0.87,
+        key_symptoms=["sleep_disorder", "loss_of_interest"]
+    )
+
+# ── API 接口 ──
+@app.post("/predict", response_model=ScreeningOutput)
+def predict_depression(input: ScreeningInput):
+    if len(input.text) < 10:
+        raise HTTPException(status_code=400, detail="文本太短，至少10个字符")
+    return predict(input)
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "model": "MIL+Attention v1.0"}</code></pre>
+
+<div class="tip-box">
+<strong>💡 扩展思路</strong>：<br>
+① 换成异步接口，支持并发筛查 <code>async def predict(...)</code><br>
+② 加上数据库记录每次筛查结果<br>
+③ 用 <code>BackgroundTasks</code> 异步保存日志<br>
+④ 用 <code>FileResponse</code> 返回筛查报告 PDF
+</div>
+</div>
+
+<!-- ========== 7 ========== -->
+<div class="card" id="deploy">
+<h2>7 部署</h2>
+
+<h3>方案 1：最简单的部署</h3>
+<pre><code># 安装生产服务器
+pip install uvicorn
+
+# 启动（生产环境）
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4</code></pre>
+
+<h3>方案 2：Docker 部署</h3>
+<pre><code># Dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+
+<pre><code># 构建并运行
+docker build -t screening-api .
+docker run -p 8000:8000 screening-api</code></pre>
+
+<div class="info-box">
+<strong>💡 部署后的访问</strong>：<br>
+<code>http://你的IP:8000/docs</code> → Swagger UI（可以直接在网页上测试 API）<br>
+<code>http://你的IP:8000/predict</code> → 调用筛查接口
+</div>
+</div>
+
+<!-- ========== 8 ========== -->
+<div class="card" id="mistakes">
+<h2>8 易错点</h2>
+
+<table>
+<tr><th>#</th><th>易错点</th><th>正确做法</th></tr>
+<tr><td>1</td><td>同步代码阻塞事件循环</td><td>CPU 密集型任务用 <code>BackgroundTasks</code> 或扔到线程池</td></tr>
+<tr><td>2</td><td>SQLite 并发问题</td><td>SQLite 只支持单写，生产环境换 PostgreSQL</td></tr>
+<tr><td>3</td><td>CORS 未配置</td><td>前端调用加 <code>from fastapi.middleware.cors import CORSMiddleware</code></td></tr>
+<tr><td>4</td><td>路径参数类型不对</td><td>参数用 <code>int</code> 而不是 <code>str</code>，让 FastAPI 自动校验</td></tr>
+<tr><td>5</td><td>开发和生产混用</td><td>开发用 <code>fastapi dev</code>，生产用 <code>uvicorn</code></td></tr>
+<tr><td>6</td><td>敏感信息硬编码</td><td>API key、数据库密码用环境变量 <code>os.getenv()</code></td></tr>
+</table>
+</div>
+
+<!-- ========== 9 ========== -->
+<div class="card" id="quiz">
+<h2>9 自测题</h2>
+
+<div class="quiz">
+<p><strong>题1</strong>：FastAPI 和 Flask 最大的两个区别是什么？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+1. FastAPI 原生支持 async/await（异步），Flask 是同步的<br>
+2. FastAPI 自动生成 Swagger 文档，Flask 需要手动配置
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题2</strong>：以下代码有什么问题？</p>
+<pre><code>@app.get("/user/{user_id}")
+def get_user(user_id):
+    return {"id": user_id}</code></pre>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+<code>user_id</code> 没有声明类型，FastAPI 不会自动校验。<br>
+正确写法：<code>def get_user(user_id: int):</code>
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题3</strong>：写一个 POST 接口，接收患者姓名和年龄，返回"患者 X，年龄 Y，登记成功"。</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+<pre><code>class PatientIn(BaseModel):
+    name: str
+    age: int
+
+@app.post("/register")
+def register(patient: PatientIn):
+    return {
+        "message": f"患者 {patient.name}，年龄 {patient.age}，登记成功"
+    }</code></pre>
+</div>
+</div>
+</div>
+
+<div class="footer">
+school-notes/tutorials/ · 生成自 Hermes Agent
+</div>
+
+</div>
+<script>
+document.querySelectorAll('.toggle-btn').forEach(function(b){b.addEventListener('click',function(){var a=this.nextElementSibling;if(a&&a.classList.contains('answer'))a.style.display='block'})});
+</script>
+</body>
+</html>
