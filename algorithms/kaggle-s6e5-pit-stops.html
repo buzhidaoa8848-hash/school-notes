@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaggle · Playground S6E5 · F1 Pit Stops</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8f9fa; color: #1a1a2e; line-height:1.7; }
+.container { max-width:960px; margin:0 auto; padding:20px; }
+.header { background: linear-gradient(135deg,#1a365d 0%,#2563eb 100%); color:#fff; padding:40px 0; text-align:center; border-radius:0 0 20px 20px; margin-bottom:30px; }
+.header h1 { font-size:28px; margin-bottom:8px; }
+.header .sub { color:#a0c4ff; font-size:14px; }
+.header .tag-line { margin-top:10px; font-size:13px; opacity:0.8; }
+.card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size:20px; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #e2e8f0; }
+.card h2 .tag { font-size:12px; background:#2563eb; color:#fff; padding:2px 10px; border-radius:12px; margin-left:8px; vertical-align:middle; }
+.card h3 { font-size:16px; margin:16px 0 8px; color:#2d3748; }
+.toc { background:#edf2f7; border-radius:12px; padding:20px; margin-bottom:20px; }
+.toc h3 { font-size:16px; margin-bottom:12px; }
+.toc a { display:block; padding:4px 0; color:#2b6cb0; text-decoration:none; font-size:14px; }
+.toc a:hover { color:#1a365d; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+th { background:#edf2f7; text-align:left; padding:10px 12px; font-weight:600; }
+td { padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+pre { background:#1e1e2e; color:#cdd6f4; border-radius:8px; padding:16px; overflow-x:auto; font-size:13px; line-height:1.6; margin:12px 0; }
+code { font-family:'JetBrains Mono','Fira Code',monospace; }
+:not(pre) > code { background:#edf2f7; padding:2px 6px; border-radius:4px; font-size:13px; }
+.info-box { background:#ebf8ff; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.warn-box { background:#fff5f5; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.tip-box { background:#f0fff4; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.quiz { margin:12px 0; padding:14px; background:#faf5ff; border-radius:8px; border-left:3px solid #805ad5; }
+.quiz p { font-weight:500; }
+.quiz .answer { display:none; margin-top:8px; padding:10px; background:#fff; border-radius:6px; font-size:14px; }
+.quiz .toggle-btn { background:#805ad5; color:#fff; border:none; padding:4px 14px; border-radius:4px; cursor:pointer; font-size:12px; margin-top:6px; }
+.footer { text-align:center; font-size:12px; color:#a0aec0; padding:30px 0; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+@media (max-width:640px) { .grid-2 { grid-template-columns:1fr; } }
+.step { display:flex; align-items:flex-start; gap:12px; margin:8px 0; }
+.step-num { background:#2563eb; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; margin-top:2px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1> Kaggle Playground S6E5</h1>
+  <div class="sub">Predicting F1 Pit Stops · F1 进站时间预测</div>
+  <div class="tag-line">表格数据 · 回归任务 · 合成数据</div>
+</div>
+
+<div class="toc">
+  <h3>学习地图</h3>
+  <a href="#overview">1 比赛总览</a>
+  <a href="#data">2 数据结构</a>
+  <a href="#eda">3 EDA 要点</a>
+  <a href="#baseline">4 Baseline 思路</a>
+  <a href="#models">5 模型选择</a>
+  <a href="#advanced">6 进阶技巧</a>
+  <a href="#code">7 代码框架</a>
+  <a href="#mistakes">8 易错点</a>
+</div>
+
+<!-- ========== 1 ========== -->
+<div class="card" id="overview">
+<h2>1 比赛总览</h2>
+
+<table>
+<tr><th>项目</th><th>内容</th></tr>
+<tr><td>比赛名称</td><td>Playground Series - Season 6, Episode 5</td></tr>
+<tr><td>任务</td><td><strong>Predicting F1 Pit Stops</strong> — 预测 F1 进站耗时</td></tr>
+<tr><td>数据类型</td><td>表格数据（基于真实 F1 数据合成的匿名特征）</td></tr>
+<tr><td>评价指标</td><td><strong>RMSE</strong>（均方根误差）—— 预测的进站时间与实际时间的偏差</td></tr>
+<tr><td>数据量</td><td>训练集 ~10万行、测试集 ~5万行（典型 Playground 规模）</td></tr>
+<tr><td>上传限制</td><td>每日 10 次（Playground 标准限制）</td></tr>
+<tr><td>难度</td><td>🟢 入门级（适合练手）</td></tr>
+<tr><td>链接</td><td><a href="https://www.kaggle.com/competitions/playground-series-s6e5" target="_blank">kaggle.com/competitions/playground-series-s6e5</a></td></tr>
+</table>
+
+<div class="info-box">
+<strong>为什么值得打</strong>：<br>
+① Playground Series 是 Kaggle 官方出的新手友好赛，数据干净、特征明确<br>
+② 适合练习完整 ML pipeline（EDA → 特征工程 → 模型 → 调参 → 提交）<br>
+③ 合成数据基于真实 F1 数据——你能看到进站时间受什么因素影响<br>
+④ 适合产出 Notebook 放在 GitHub 上
+</div>
+</div>
+
+<!-- ========== 2 ========== -->
+<div class="card" id="data">
+<h2>2 数据结构</h2>
+
+<div class="info-box">
+<strong>AI 推断</strong>：以下数据结构基于 Playground Series 的一贯风格（Train + Test + Sample Submission），具体列名以 Kaggle 页面为准。
+</div>
+
+<h3>训练集特征（预计）</h3>
+
+<table>
+<tr><th>特征名</th><th>类型</th><th>说明</th></tr>
+<tr><td><code>id</code></td><td>int</td><td>唯一标识</td></tr>
+<tr><td><code>driver_xxx</code></td><td>category</td><td>车手相关特征（编码后）</td></tr>
+<tr><td><code>constructor_xxx</code></td><td>category</td><td>车队相关特征</td></tr>
+<tr><td><code>circuit_xxx</code></td><td>category</td><td>赛道特征</td></tr>
+<tr><td><code>tyre_xxx</code></td><td>category</td><td>轮胎类型特征</td></tr>
+<tr><td><code>lap_number</code></td><td>int</td><td>第几圈进站</td></tr>
+<tr><td><code>pit_number</code></td><td>int</td><td>第几次进站</td></tr>
+<tr><td><code>weather_xxx</code></td><td>category</td><td>天气条件</td></tr>
+<tr><td><code>..._num</code></td><td>float</td><td>各类数值型特征</td></tr>
+<tr><td><code>pit_stop_duration</code></td><td>float</td><td><strong>目标变量</strong>（要预测的进站时间）</td></tr>
+</table>
+
+<h3>数据特点</h3>
+<ul style="margin:8px 0 0 20px; font-size:14px;">
+  <li><strong>合成数据</strong>：特征经过匿名化处理，列名可能被编码（如 <code>cat0, cat1, num0, num1</code>）</li>
+  <li><strong>类别特征</strong>：大量类别变量（车队、车手、赛道、轮胎）</li>
+  <li><strong>数值特征</strong>：圈数、进站次数、时间间隔等</li>
+  <li><strong>缺失值</strong>：通常很少，但需检查</li>
+  <li><strong>目标分布</strong>：进站时间呈右偏分布（大多数进站快，少数出问题拖长）</li>
+</ul>
+</div>
+
+<!-- ========== 3 ========== -->
+<div class="card" id="eda">
+<h2>3 EDA 要点</h2>
+
+<div class="grid-2">
+<div class="info-box">
+<strong>必做</strong><br>
+✅ 目标变量分布（是否偏斜？要不要 log 变换？）<br>
+✅ 缺失值统计<br>
+✅ 数值特征的相关性矩阵<br>
+✅ 类别特征的频次分布（低频类别合并）<br>
+✅ 训练集和测试集分布对比
+</div>
+<div class="info-box">
+<strong>进阶</strong><br>
+✅ 按车队分组看进站时间分布<br>
+✅ 按赛道类型分组看差异<br>
+✅ pit_stop_duration 和 lap_number 的关系<br>
+✅ 异常值检测（进站时间特别长的可能是事故）
+</div>
+</div>
+
+<pre><code># EDA 模板代码
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+train = pd.read_csv("train.csv")
+test = pd.read_csv("test.csv")
+
+# 1. 基本信息
+print(train.info())
+print(train.describe())
+
+# 2. 目标分布
+plt.figure(figsize=(8,4))
+sns.histplot(train["pit_stop_duration"], bins=50)
+plt.title("Distribution of Pit Stop Duration")
+plt.show()
+
+# 3. 缺失值
+missing = train.isnull().sum()
+missing = missing[missing > 0].sort_values(ascending=False)
+print(f"缺失特征: {len(missing)}")
+
+# 4. 相关性
+num_cols = train.select_dtypes(include=[np.number]).columns
+corr = train[num_cols].corr()
+sns.heatmap(corr, cmap="RdBu", center=0)
+
+# 5. 类别特征频次
+cat_cols = train.select_dtypes(include=["object"]).columns
+for col in cat_cols:
+    print(f"{col}: {train[col].nunique()} 个唯一值")</code></pre>
+</div>
+
+<!-- ========== 4 ========== -->
+<div class="card" id="baseline">
+<h2>4 Baseline 思路</h2>
+
+<h3>Day 1：最简 Baseline（15分钟出分）</h3>
+<pre><code>from lightgbm import LGBMRegressor
+from sklearn.model_selection import KFold
+from sklearn.metrics import mean_squared_error
+
+# 简单预处理
+train = pd.read_csv("train.csv")
+test = pd.read_csv("test.csv")
+
+# 分离特征和目标
+X = train.drop(columns=["id", "pit_stop_duration"])
+y = train["pit_stop_duration"]
+X_test = test.drop(columns=["id"])
+
+# 处理类别特征
+for col in X.select_dtypes(include=["object"]).columns:
+    X[col] = X[col].astype("category")
+    X_test[col] = X_test[col].astype("category")
+
+# 训练 LightGBM
+model = LGBMRegressor(
+    n_estimators=1000,
+    learning_rate=0.05,
+    max_depth=7,
+    verbosity=-1
+)
+model.fit(X, y, eval_set=[(X, y)], eval_metric="rmse")
+
+# 预测
+preds = model.predict(X_test)
+
+# 提交
+sub = pd.DataFrame({"id": test["id"], "pit_stop_duration": preds})
+sub.to_csv("submission.csv", index=False)</code></pre>
+
+<div class="tip-box">
+<strong>💡 Baseline 预期</strong>：LightGBM 默认参数通常能进前 50%（Playground 系列竞争激烈度适中）。
+</div>
+</div>
+
+<!-- ========== 5 ========== -->
+<div class="card" id="models">
+<h2>5 模型选择</h2>
+
+<table>
+<tr><th>模型</th><th>适合原因</th><th>优点</th><th>缺点</th></tr>
+<tr>
+<td><strong>LightGBM</strong></td>
+<td>表格数据的王者</td>
+<td>快、省内存、原生支持类别特征</td>
+<td>小数据易过拟合</td>
+</tr>
+<tr>
+<td><strong>CatBoost</strong></td>
+<td>类别特征多的竞赛首选</td>
+<td>原生处理类别变量、ordered boosting</td>
+<td>比 LightGBM 慢一点</td>
+</tr>
+<tr>
+<td><strong>XGBoost</strong></td>
+<td>稳定可靠</td>
+<td>正则化强、不易过拟合</td>
+<td>类别特征需要编码</td>
+</tr>
+<tr>
+<td><strong>Stacking Ensemble</strong></td>
+<td>冲榜用</td>
+<td>融合多个模型的优势</td>
+<td>训练时间长、易过拟合</td>
+</tr>
+</table>
+
+<div class="info-box">
+<strong>推荐路线</strong>：Day1 LightGBM baseline → Day2 CatBoost 对比 → Day3 调参 + 融合
+</div>
+</div>
+
+<!-- ========== 6 ========== -->
+<div class="card" id="advanced">
+<h2>6 进阶技巧</h2>
+
+<h3>特征工程</h3>
+<pre><code># 1. 类别特征编码
+# CatBoost 不需要编码，直接用
+# LightGBM 用 .astype("category")
+
+# 2. 目标编码（Target Encoding）
+from category_encoders import TargetEncoder
+te = TargetEncoder(cols=cat_cols)
+X_encoded = te.fit_transform(X, y)
+
+# 3. 组合特征
+# 如果有车队+赛道组合，可能产生强特征
+X["constructor_circuit"] = X["constructor"] + "_" + X["circuit"]
+
+# 4. 统计聚合
+# 按车队分组统计进站时间的均值/标准差
+team_stats = train.groupby("constructor")["pit_stop_duration"].agg(["mean","std"])
+team_stats.columns = ["constructor_duration_mean", "constructor_duration_std"]</code></pre>
+
+<h3>调参</h3>
+<pre><code># LightGBM 调参顺序
+# Step 1: n_estimators + learning_rate
+# Step 2: max_depth + num_leaves
+# Step 3: subsample + colsample_bytree
+# Step 4: reg_alpha + reg_lambda
+
+# CatBoost 调参
+# Step 1: iterations + learning_rate
+# Step 2: depth
+# Step 3: l2_leaf_reg</code></pre>
+
+<h3>交叉验证</h3>
+<pre><code># Playground 数据通常是整列的随机分割
+# 5-fold 基本够用
+folds = KFold(n_splits=5, shuffle=True, random_state=42)
+scores = []
+
+for fold, (trn_idx, val_idx) in enumerate(folds.split(X, y)):
+    X_trn, X_val = X.iloc[trn_idx], X.iloc[val_idx]
+    y_trn, y_val = y.iloc[trn_idx], y.iloc[val_idx]
+    
+    model = LGBMRegressor(n_estimators=10000, learning_rate=0.01)
+    model.fit(X_trn, y_trn,
+              eval_set=[(X_val, y_val)],
+              callbacks=[early_stopping(100), verbose(0)])
+    
+    preds = model.predict(X_val)
+    rmse = np.sqrt(mean_squared_error(y_val, preds))
+    scores.append(rmse)
+    print(f"Fold {fold+1}: {rmse:.4f}")
+
+print(f"CV RMSE: {np.mean(scores):.4f} ± {np.std(scores):.4f}")</code></pre>
+</div>
+
+<!-- ========== 7 ========== -->
+<div class="card" id="code">
+<h2>7 完整代码框架</h2>
+
+<pre><code># compete.py — Playground S6E5 完整 Pipeline
+import pandas as pd
+import numpy as np
+from lightgbm import LGBMRegressor
+from sklearn.model_selection import KFold
+from sklearn.metrics import mean_squared_error
+
+# ── 1. 加载数据 ──
+train = pd.read_csv("/kaggle/input/playground-series-s6e5/train.csv")
+test = pd.read_csv("/kaggle/input/playground-series-s6e5/test.csv")
+sample = pd.read_csv("/kaggle/input/playground-series-s6e5/sample_submission.csv")
+
+# ── 2. 预处理 ──
+X = train.drop(columns=["id", "pit_stop_duration"])
+y = train["pit_stop_duration"]
+X_test = test.drop(columns=["id"])
+
+cat_cols = X.select_dtypes(include=["object"]).columns
+for col in cat_cols:
+    X[col] = X[col].astype("category")
+    X_test[col] = X_test[col].astype("category")
+
+# ── 3. 交叉验证训练 ──
+folds = KFold(n_splits=5, shuffle=True, random_state=42)
+models = []
+test_preds = np.zeros(len(X_test))
+
+for fold, (trn_idx, val_idx) in enumerate(folds.split(X, y)):
+    X_trn, X_val = X.iloc[trn_idx], X.iloc[val_idx]
+    y_trn, y_val = y.iloc[trn_idx], y.iloc[val_idx]
+    
+    model = LGBMRegressor(
+        n_estimators=10000,
+        learning_rate=0.01,
+        max_depth=6,
+        num_leaves=31,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        reg_alpha=0.1,
+        reg_lambda=0.1,
+        random_state=fold,
+        verbosity=-1
+    )
+    
+    model.fit(
+        X_trn, y_trn,
+        eval_set=[(X_val, y_val)],
+        eval_metric="rmse",
+        callbacks=[
+            lgb.early_stopping(100),
+            lgb.log_evaluation(0)
+        ]
+    )
+    
+    test_preds += model.predict(X_test) / 5
+    print(f"Fold {fold+1} done")
+
+# ── 4. 提交 ──
+sample["pit_stop_duration"] = test_preds
+sample.to_csv("submission.csv", index=False)
+print("✅ 提交文件已生成")</code></pre>
+</div>
+
+<!-- ========== 8 ========== -->
+<div class="card" id="mistakes">
+<h2>8 易错点</h2>
+
+<table>
+<tr><th>#</th><th>易错点</th><th>正确做法</th></tr>
+<tr><td>1</td><td>类别特征未处理直接喂模型</td><td>LightGBM 用 <code>.astype("category")</code>，CatBoost 原生支持</td></tr>
+<tr><td>2</td><td>用 <code>train_test_split</code> 代替 CV</td><td>Playground 用 5-fold CV 更稳</td></tr>
+<tr><td>3</td><td>不过早停，模型过拟合</td><td>LightGBM 设 <code>early_stopping(100)</code></td></tr>
+<tr><td>4</td><td>提交格式不对</td><td>确保列名和 sample_submission.csv 完全一致</td></tr>
+<tr><td>5</td><td>忘记 shulffle</td><td>KFold 要设 <code>shuffle=True</code></td></tr>
+<tr><td>6</td><td>训练集和测试集处理不一致</td><td>特征工程步骤必须完全相同地应用于 test</td></tr>
+</table>
+
+<div class="warn-box">
+<strong>Playground 特别提醒</strong>：合成数据通常没有明显的时间顺序或分组结构，不需要 StratifiedKFold 或 GroupKFold。直接用普通 KFold 即可。
+</div>
+</div>
+
+<!-- ========== QUIZ ========== -->
+<div class="card">
+<h2>自测题</h2>
+
+<div class="quiz">
+<p><strong>题1</strong>：Playground S6E5 的评价指标是什么？应该怎么理解这个指标？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+RMSE（均方根误差）。数值越小代表预测越准。RMSE 对大误差惩罚较大（因为误差平方），意味着如果你有少数预测偏差很大的样本，RMSE 会很难看。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题2</strong>：类别特征很多，你应该选哪个模型？为什么？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+CatBoost 或 LightGBM。CatBoost 原生处理类别特征（不需要 .astype("category")），LightGBM 需要转换但速度更快。建议两个都试。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题3</strong>：5-fold CV 的预测结果怎么整合成最终提交？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+5 个模型分别对 test 集做预测，取平均值：<code>test_preds = np.mean([m.predict(X_test) for m in models], axis=0)</code>。平均能降低单模型的方差。
+</div>
+</div>
+</div>
+
+<div class="footer">
+school-notes/algorithms/ · playground-series-s6e5 · Generated from Hermes Agent<br>
+部分内容基于 Playground Series 通用模式推断，具体数据以 Kaggle 页面为准
+</div>
+
+</div>
+<script>
+document.querySelectorAll('.toggle-btn').forEach(function(b){b.addEventListener('click',function(){var a=this.nextElementSibling;if(a&&a.classList.contains('answer'))a.style.display='block'})});
+</script>
+</body>
+</html>
