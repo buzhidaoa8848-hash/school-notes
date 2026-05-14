@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatBoost · Porto Seguro · Kaggle 实战</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8f9fa; color: #1a1a2e; line-height:1.7; }
+.container { max-width:960px; margin:0 auto; padding:20px; }
+.header { background: linear-gradient(135deg,#6b21a5 0%,#9333ea 100%); color:#fff; padding:40px 0; text-align:center; border-radius:0 0 20px 20px; margin-bottom:30px; }
+.header h1 { font-size:28px; margin-bottom:8px; }
+.header .sub { color:#d8b4fe; font-size:14px; }
+.card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size:20px; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #e2e8f0; }
+.card h2 .tag { font-size:12px; background:#9333ea; color:#fff; padding:2px 10px; border-radius:12px; margin-left:8px; vertical-align:middle; }
+.card h3 { font-size:16px; margin:16px 0 8px; color:#2d3748; }
+.toc { background:#edf2f7; border-radius:12px; padding:20px; margin-bottom:20px; }
+.toc h3 { font-size:16px; margin-bottom:12px; }
+.toc a { display:block; padding:4px 0; color:#2b6cb0; text-decoration:none; font-size:14px; }
+.toc a:hover { color:#1a365d; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+th { background:#edf2f7; text-align:left; padding:10px 12px; font-weight:600; }
+td { padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+pre { background:#1e1e2e; color:#cdd6f4; border-radius:8px; padding:16px; overflow-x:auto; font-size:13px; line-height:1.6; margin:12px 0; }
+code { font-family:'JetBrains Mono','Fira Code',monospace; }
+:not(pre) > code { background:#edf2f7; padding:2px 6px; border-radius:4px; font-size:13px; }
+.info-box { background:#ebf8ff; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.warn-box { background:#fff5f5; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.tip-box { background:#f0fff4; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.quiz { margin:12px 0; padding:14px; background:#faf5ff; border-radius:8px; border-left:3px solid #9333ea; }
+.quiz p { font-weight:500; }
+.quiz .answer { display:none; margin-top:8px; padding:10px; background:#fff; border-radius:6px; font-size:14px; }
+.quiz .toggle-btn { background:#9333ea; color:#fff; border:none; padding:4px 14px; border-radius:4px; cursor:pointer; font-size:12px; margin-top:6px; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+@media (max-width:640px) { .grid-2 { grid-template-columns:1fr; } }
+.footer { text-align:center; font-size:12px; color:#a0aec0; padding:30px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1> CatBoost · Porto Seguro 实战</h1>
+  <div class="sub">kailex/catboost-baseline-0-676 · 保险风险预测 · 二分类 · 高度不平衡</div>
+</div>
+
+<div class="toc">
+  <h3>知识地图</h3>
+  <a href="#overview">1 比赛与 notebook 总览</a>
+  <a href="#catboost">2 CatBoost 是什么</a>
+  <a href="#vs">3 CatBoost vs XGBoost vs LightGBM</a>
+  <a href="#data">4 Porto Seguro 数据特点</a>
+  <a href="#code">5 Notebook 逐行拆解</a>
+  <a href="#features">6 特征工程要点</a>
+  <a href="#tuning">7 调参策略</a>
+  <a href="#mistakes">8 易错点</a>
+  <a href="#quiz">9 自测题</a>
+</div>
+
+<!-- ========== 1 ========== -->
+<div class="card" id="overview">
+<h2>1 比赛与 notebook 总览</h2>
+
+<table>
+<tr><th>项目</th><th>内容</th></tr>
+<tr><td>比赛</td><td>Porto Seguro Safe Driver Prediction</td></tr>
+<tr><td>任务</td><td>预测司机是否会申请保险理赔（二分类）</td></tr>
+<tr><td>指标</td><td><strong>Normalized Gini Coefficient</strong></td></tr>
+<tr><td>数据</td><td>~600K 训练样本，57 个匿名特征（binary + continuous）</td></tr>
+<tr><td>不平衡</td><td>96.4% 未理赔（0），3.6% 理赔（1）</td></tr>
+<tr><td>Notebook</td><td><a href="https://www.kaggle.com/code/kailex/catboost-baseline-0-676" target="_blank">kailex/catboost-baseline-0-676</a></td></tr>
+<tr><td>得分</td><td>0.676 Gini（CatBoost 默认参数）</td></tr>
+</table>
+
+<div class="info-box">
+<strong>为什么学这个 notebook</strong><br>
+① 代码极其精简（不到 50 行），适合入门 CatBoost<br>
+② 展示了 CatBoost 的核心优势：原生处理类别特征、无需预处理<br>
+③ 保险/金融场景是 CatBoost 的主场<br>
+④ 从 baseline 出发，后续可以加特征工程冲高
+</div>
+</div>
+
+<!-- ========== 2 ========== -->
+<div class="card" id="catboost">
+<h2>2 CatBoost 是什么</h2>
+
+<h3>核心特色</h3>
+
+<table>
+<tr><th>特性</th><th>说明</th><th>为什么重要</th></tr>
+<tr><td><strong>Ordered Boosting</strong></td><td>每个样本只用前面的样本训练，类似在线学习</td><td>减少 Target Leakage，比传统 Boosting 更抗过拟合</td></tr>
+<tr><td><strong>原生类别特征</strong></td><td>直接传字符串列，不需要 One-Hot / Label Encoding</td><td>省事 + 不丢失信息（避免高基数特征维度爆炸）</td></tr>
+<tr><td><strong>Symmetric Trees</strong></td><td>对称二叉树，每层用相同分裂条件</td><td>预测极快、不容易过拟合、可解释性略好</td></tr>
+<tr><td><strong>Ordered TS</strong></td><td>类别特征的目标编码用在线方式计算</td><td>比传统 Target Encoding 更少过拟合</td></tr>
+</table>
+
+<h3>三句话理解 CatBoost</h3>
+<div class="grid-2">
+<div class="info-box">
+<strong>一句话</strong><br>
+和 XGBoost/LightGBM 一样是梯度提升树，但把类别特征的处理直接做进了算法里。
+</div>
+<div class="info-box">
+<strong>第二句话</strong><br>
+训练时不把所有数据一次性用于计算梯度，而是类似"在线学习"逐样本更新——这就是 Ordered Boosting。
+</div>
+<div class="info-box">
+<strong>第三句话</strong><br>
+树的形状是"对称的"（每层分裂用同样的条件），牺牲了一点灵活性换来了更稳的泛化。
+</div>
+<div class="info-box">
+<strong>一句话总结</strong><br>
+<strong>类别特征多、数据不太大、怕过拟合 → 用 CatBoost</strong>
+</div>
+</div>
+</div>
+
+<!-- ========== 3 ========== -->
+<div class="card" id="vs">
+<h2>3 CatBoost vs XGBoost vs LightGBM</h2>
+
+<table>
+<tr><th>对比维度</th><th>CatBoost</th><th>XGBoost</th><th>LightGBM</th></tr>
+<tr><td>类别特征</td><td>✅ 原生支持</td><td>❌ 需编码</td><td>⚠️ 需 .astype("category")</td></tr>
+<tr><td>训练速度</td><td>较慢（尤其大数据）</td><td>中等</td><td>🚀 最快</td></tr>
+<tr><td>默认参数效果</td><td>⭐ 最好（不用调参就挺强）</td><td>中等</td><td>需调参</td></tr>
+<tr><td>过拟合控制</td><td>⭐⭐ 最强（Ordered Boosting）</td><td>较强（正则化项多）</td><td>一般（叶子数多易过拟合）</td></tr>
+<tr><td>小数据表现</td><td>⭐⭐ 最优</td><td>中等</td><td>较差（容易过拟合）</td></tr>
+<tr><td>GPU 支持</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>预测速度</td><td>🚀 最快（对称树）</td><td>快</td><td>快</td></tr>
+</table>
+
+<div class="tip-box">
+<strong>💡 选型建议</strong><br>
+Porto Seguro 这种保险数据：<strong>类别特征多 + 数据约 60 万行</strong> → CatBoost 是很自然的首选<br>
+如果你特征工程做得深、特征变成纯数值 → LightGBM 更快<br>
+通常的建议是：<strong>CatBoost 打 baseline → LightGBM 冲榜</strong>
+</div>
+</div>
+
+<!-- ========== 4 ========== -->
+<div class="card" id="data">
+<h2>4 Porto Seguro 数据特点</h2>
+
+<table>
+<tr><th>特点</th><th>说明</th><th>对建模的影响</th></tr>
+<tr><td>严重不平衡</td><td>96.4% 未理赔 : 3.6% 理赔</td><td>不能用准确率评估，需用 Gini / AUC</td></tr>
+<tr><td>匿名特征</td><td>特征名 ps_ind_xx, ps_reg_xx, ps_car_xx 等</td><td>无法做业务层面的特征解释，纯数据驱动</td></tr>
+<tr><td>混合类型</td><td>binary 特征（0/1）+ 连续特征</td><td>CatBoost 自动识别 binary 为类别型</td></tr>
+<tr><td>缺失值</td><td>部分特征有缺失（以 -1 标记）</td><td>CatBoost 原生处理缺失值，不需要填充</td></tr>
+<tr><td>Gini 指标</td><td>Normalized Gini Coefficient</td><td>和 AUC 等价：Gini = 2×AUC − 1</td></tr>
+</table>
+
+<h3>特征命名规则</h3>
+<pre><code>ps_ind_xx    → 个体特征（年龄、性别、驾驶经验等）
+ps_reg_xx    → 区域特征（地区相关）
+ps_car_xx    → 车辆特征（车型、车龄、马力等）
+ps_calc_xx   → 计算特征（保险公司计算出的分数，通常可删除）</code></pre>
+
+<div class="warn-box">
+<strong>⚠️ 关键陷阱</strong>：<code>ps_calc_xx</code> 系列特征通常是保险公司算出来的"分数"，在训练集和测试集中是固定的随机数——对预测没有帮助，Kaggle 社区一般直接删除。
+</div>
+</div>
+
+<!-- ========== 5 ========== -->
+<div class="card" id="code">
+<h2>5 Notebook 逐行拆解</h2>
+<p>来源：<a href="https://www.kaggle.com/code/kailex/catboost-baseline-0-676" target="_blank">kailex/catboost-baseline-0-676</a></p>
+
+<h3>完整代码（约 40 行）</h3>
+<pre><code># ── 1. 导入 ──
+import pandas as pd
+import numpy as np
+from catboost import CatBoostClassifier, Pool
+
+# ── 2. 加载数据 ──
+train = pd.read_csv("../input/train.csv")
+test = pd.read_csv("../input/test.csv")
+
+# ── 3. 分离 X 和 y ──
+X = train.drop(["id", "target"], axis=1)
+y = train["target"]
+X_test = test.drop(["id"], axis=1)
+
+# ── 4. 识别类别特征 ──
+cat_features = list(X.select_dtypes(include=["object"]).columns)
+# 也把 binary 特征标记为类别
+for col in X.columns:
+    if X[col].nunique() == 2:
+        cat_features.append(col)
+cat_features = list(set(cat_features))
+
+# ── 5. 创建 Pool 对象 ──
+train_pool = Pool(X, y, cat_features=cat_features)
+test_pool = Pool(X_test, cat_features=cat_features)
+
+# ── 6. 训练 ──
+model = CatBoostClassifier(
+    iterations=1000,
+    learning_rate=0.03,
+    depth=6,
+    eval_metric="AUC",
+    random_seed=42,
+    verbose=200,
+    early_stopping_rounds=100
+)
+model.fit(train_pool, eval_set=train_pool)
+
+# ── 7. 预测 ──
+preds = model.predict_proba(X_test)[:, 1]
+
+# ── 8. 提交 ──
+sub = pd.DataFrame({"id": test["id"], "target": preds})
+sub.to_csv("submission.csv", index=False)</code></pre>
+
+<h3>逐行解释</h3>
+
+<table>
+<tr><th>代码段</th><th>在做什么</th><th>为什么这么做</th></tr>
+<tr>
+<td><code>cat_features = list(X.select_dtypes(include=["object"]).columns)</code></td>
+<td>找出所有字符串类型的列</td>
+<td>CatBoost 需要知道哪些是类别特征，才能自动做 Ordered TS 编码</td>
+</tr>
+<tr>
+<td><code>Pool(X, y, cat_features=cat_features)</code></td>
+<td>创建 CatBoost 内部数据结构</td>
+<td>Pool 比直接传 DataFrame 更快，且自动处理特征类型</td>
+</tr>
+<tr>
+<td><code>eval_metric="AUC"</code></td>
+<td>用 AUC 作为评估指标</td>
+<td>Porto Seguro 的评价指标是 Gini，AUC 和 Gini 等价（Gini = 2×AUC − 1），所以优化 AUC 就是优化 Gini</td>
+</tr>
+<tr>
+<td><code>early_stopping_rounds=100</code></td>
+<td>验证集 100 轮不提升就停止</td>
+<td>防止过拟合，自动找到最佳迭代次数</td>
+</tr>
+<tr>
+<td><code>eval_set=train_pool</code></td>
+<td>用训练集自己做验证</td>
+<td>⚠️ 这个 notebook 直接用训练集做 eval_set，没有做 train/val split——这是偷懒做法，正经做应该分出一部分做验证</td>
+</tr>
+</table>
+
+<div class="warn-box">
+<strong>⚠️ 这个 notebook 的一个问题</strong>：直接用训练集做 eval_set（没有分验证集），early_stopping 的效果会打折扣。更好的做法是手动 split 出一部分数据做 eval_set，或者用 CV。
+</div>
+</div>
+
+<!-- ========== 6 ========== -->
+<div class="card" id="features">
+<h2>6 特征工程要点</h2>
+
+<pre><code># Porto Seguro 经典特征工程（来自高分 notebook）
+
+# 1. 删除无用特征
+drop_cols = [col for col in train.columns if 'ps_calc_' in col]
+X = X.drop(columns=drop_cols)
+
+# 2. 组合特征（交互特征）
+X["ind_reg"] = X["ps_ind_01"] * X["ps_reg_01"]  # 个体×区域交互
+X["car_reg"] = X["ps_car_01"] * X["ps_reg_01"]   # 车辆×区域交互
+
+# 3. 统计特征
+# 按车辆类型分组统计理赔率
+car_target_mean = train.groupby("ps_car_01_cat")["target"].mean()
+X["car_target_mean"] = X["ps_car_01_cat"].map(car_target_mean)
+
+# 4. 缺失值标记
+for col in X.columns:
+    if X[col].isnull().any():
+        X[col + "_na"] = X[col].isnull().astype(int)
+
+# 5. 数值分箱
+X["ps_reg_01_binned"] = pd.qcut(X["ps_reg_01"], q=10, labels=False, duplicates="drop")</code></pre>
+
+<div class="info-box">
+<strong>特征工程对 CatBoost 的提升</strong>：<br>
+不做特征工程的 CatBoost baseline ≈ 0.676 Gini<br>
+做了基本特征工程 → <strong>0.68-0.69</strong><br>
+做了深度特征工程 + 调参 → <strong>0.70+</strong><br>
+前几名大概在 <strong>0.71-0.72</strong>
+</div>
+</div>
+
+<!-- ========== 7 ========== -->
+<div class="card" id="tuning">
+<h2>7 调参策略</h2>
+
+<h3>CatBoost 调参顺序（按重要性）</h3>
+
+<table>
+<tr><th>顺序</th><th>参数</th><th>作用</th><th>建议范围</th></tr>
+<tr><td>1</td><td><code>iterations</code><br><code>learning_rate</code></td><td>迭代次数和学习率是核心</td><td>iter=1000-5000, lr=0.01-0.1</td></tr>
+<tr><td>2</td><td><code>depth</code></td><td>树深度，默认 6</td><td>4-10（小数据浅一点）</td></tr>
+<tr><td>3</td><td><code>l2_leaf_reg</code></td><td>L2 正则化</td><td>1-10</td></tr>
+<tr><td>4</td><td><code>subsample</code></td><td>行采样</td><td>0.6-0.9</td></tr>
+<tr><td>5</td><td><code>colsample_bylevel</code></td><td>列采样</td><td>0.6-0.9</td></tr>
+</table>
+
+<pre><code># 用 Optuna 自动调参（推荐）
+import optuna
+
+def objective(trial):
+    params = {
+        "iterations": 1000,
+        "learning_rate": trial.suggest_float("lr", 0.005, 0.1, log=True),
+        "depth": trial.suggest_int("depth", 4, 10),
+        "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 1, 10),
+        "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+        "random_seed": 42,
+        "eval_metric": "AUC",
+        "verbose": 0
+    }
+    
+    model = CatBoostClassifier(**params)
+    model.fit(X_train, y_train, eval_set=(X_val, y_val), early_stopping_rounds=100)
+    preds = model.predict_proba(X_val)[:, 1]
+    return roc_auc_score(y_val, preds)
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=20)
+print(study.best_params)</code></pre>
+
+<div class="tip-box">
+<strong>💡 经验</strong>：CatBoost 默认参数通常就挺好。这个 notebook 就用了默认参数得了 0.676。你先跑 baseline，再考虑调参。
+</div>
+</div>
+
+<!-- ========== 8 ========== -->
+<div class="card" id="mistakes">
+<h2>8 易错点</h2>
+
+<table>
+<tr><th>#</th><th>易错点</th><th>正确做法</th></tr>
+<tr><td>1</td><td><b>没有指定 cat_features</b></td><td>CatBoost 虽然自动识别，但显式指定更可靠：<code>model.fit(X, y, cat_features=cat_features)</code></td></tr>
+<tr><td>2</td><td><b>用 Pool 时不传 cat_features</b></td><td>Pool(X, y, cat_features=cat_features) — 三者都要传</td></tr>
+<tr><td>3</td><td><b>分类问题用 predict() 而不是 predict_proba()</b></td><td>提交需要的是概率，不是类别标签：<code>predict_proba(X)[:, 1]</code></td></tr>
+<tr><td>4</td><td><b>忘记处理不平衡</b></td><td>CatBoost 可加 <code>auto_class_weights="SqrtBalanced"</code></td></tr>
+<tr><td>5</td><td><b>用 accuracy 评估</b></td><td>96% 负样本，全预测 0 也有 96% 准确率。必须用 AUC / Gini</td></tr>
+<tr><td>6</td><td><b>eval_set 直接用全部训练集</b></td><td>如上所述，应该手动 split 出验证集</td></tr>
+</table>
+</div>
+
+<!-- ========== 9 ========== -->
+<div class="card" id="quiz">
+<h2>9 自测题</h2>
+
+<div class="quiz">
+<p><strong>题1</strong>：CatBoost 和 LightGBM 最大的区别是什么？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+CatBoost 用 Ordered Boosting（在线学习方式更新梯度），LightGBM 用 GOSS + EFB。CatBoost 原生处理类别特征（不需要编码），LightGBM 需要 .astype("category")。CatBoost 树是对称的，LightGBM 是叶子节点生长。<br><br>
+简单记：<strong>CatBoost = 类别特征友好 + 抗过拟合；LightGBM = 数据量大时更快</strong>
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题2</strong>：Porto Seguro 的评价指标是 Gini，为什么 notebook 里设置 eval_metric="AUC"？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+因为 Normalized Gini = 2 × AUC − 1。优化 AUC 等价于优化 Gini，而 CatBoost 原生支持 AUC 作为 eval_metric，计算更方便。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题3</strong>：为什么 Porto Seguro 不能用准确率（accuracy）评估模型？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+因为严重不平衡：96.4% 是负样本（未理赔），3.6% 是正样本。如果你全部预测为 0，准确率是 96.4%——看起来很高，但模型其实什么都没学到。<br><br>
+需要评估的是模型区分两个类别的能力（AUC/Gini），而不是预测的"准不准"。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题4（代码填空）</strong>：完成以下 CatBoost 训练代码</p>
+<pre><code>from catboost import CatBoostClassifier, Pool
+
+train_pool = Pool(X_train, y_train, cat_features=___)
+model = CatBoostClassifier(iterations=1000, eval_metric="___", random_seed=42)
+model.fit(train_pool, eval_set=___)</code></pre>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+<pre><code>cat_features  → 储存类别特征列名的列表
+eval_metric   → "AUC"
+eval_set      → 验证集的 Pool 对象（如 valid_pool）</code></pre>
+</div>
+</div>
+</div>
+
+<div class="footer">
+school-notes/algorithms/ · kailex/catboost-baseline-0-676 · Porto Seguro<br>
+配合 notebook 一起看效果最好：<a href="https://www.kaggle.com/code/kailex/catboost-baseline-0-676" target="_blank">Kaggle Notebook</a>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('.toggle-btn').forEach(function(b){b.addEventListener('click',function(){var a=this.nextElementSibling;if(a&&a.classList.contains('answer'))a.style.display='block'})});
+</script>
+</body>
+</html>
