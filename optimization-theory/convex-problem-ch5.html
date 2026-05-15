@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优化理论 · 第5章 · 凸问题</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8f9fa; color: #1a1a2e; line-height:1.7; }
+.container { max-width:960px; margin:0 auto; padding:20px; }
+.header { background: linear-gradient(135deg,#7c3aed 0%,#a855f7 100%); color:#fff; padding:40px 0; text-align:center; border-radius:0 0 20px 20px; margin-bottom:30px; }
+.header h1 { font-size:28px; margin-bottom:8px; }
+.header .sub { color:#ddd6fe; font-size:14px; }
+.header .info { color:#ede9fe; font-size:13px; margin-top:8px; }
+.card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size:20px; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #e2e8f0; }
+.card h2 .tag { font-size:12px; background:#7c3aed; color:#fff; padding:2px 10px; border-radius:12px; margin-left:8px; vertical-align:middle; }
+.card h3 { font-size:16px; margin:16px 0 8px; color:#2d3748; }
+.card h4 { font-size:14px; margin:12px 0 6px; color:#4a5568; }
+.toc { background:#f5f3ff; border-radius:12px; padding:20px; margin-bottom:20px; }
+.toc h3 { font-size:16px; margin-bottom:12px; color:#7c3aed; }
+.toc a { display:block; padding:4px 0; color:#7c3aed; text-decoration:none; font-size:14px; }
+.toc a:hover { text-decoration:underline; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+th { background:#f5f3ff; text-align:left; padding:10px 12px; font-weight:600; }
+td { padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+pre { background:#1e1e2e; color:#cdd6f4; border-radius:8px; padding:16px; overflow-x:auto; font-size:13px; line-height:1.6; margin:12px 0; }
+code { font-family:'JetBrains Mono','Fira Code',monospace; }
+:not(pre) > code { background:#f5f3ff; padding:2px 6px; border-radius:4px; font-size:13px; }
+.info-box { background:#f5f3ff; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.warn-box { background:#fef2f2; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.tip-box { background:#f0fff4; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.quiz { margin:12px 0; padding:14px; background:#faf5ff; border-radius:8px; border-left:3px solid #7c3aed; }
+.quiz p { font-weight:500; }
+.quiz .answer { display:none; margin-top:8px; padding:10px; background:#fff; border-radius:6px; font-size:14px; }
+.quiz .toggle-btn { background:#7c3aed; color:#fff; border:none; padding:4px 14px; border-radius:4px; cursor:pointer; font-size:12px; margin-top:6px; }
+.footer { text-align:center; font-size:12px; color:#a0aec0; padding:30px 0; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin:12px 0; }
+@media (max-width:640px) { .grid-2,.grid-3 { grid-template-columns:1fr; } }
+.eq { margin:8px 0; padding:8px 0; overflow-x:auto; }
+.def-box { background:#f5f3ff; border-left:3px solid #7c3aed; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; }
+.theorem-box { background:#f0fff4; border-left:3px solid #22c55e; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; }
+.proof-box { background:#f0fdf4; border-left:3px solid #86efac; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; font-size:14px; }
+.proof-box .proof-label { font-size:12px; color:#16a34a; font-weight:600; margin-bottom:4px; }
+.exam-box { background:#f0f9ff; border-left:3px solid #3b82f6; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; }
+.problem-type { background:#f0f9ff; border-radius:12px; padding:16px; margin:10px 0; border:1px solid #dbeafe; }
+.problem-type h4 { color:#1e40af; margin-bottom:8px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>优化理论 · 第5章</h1>
+  <div class="sub">凸问题 (Convex Problem)</div>
+  <div class="info">上海财经大学 · 郭加熠 · 35页课件</div>
+</div>
+
+<div class="toc">
+  <h3>📖 学习地图</h3>
+  <a href="#standard">1 优化问题标准形式</a>
+  <a href="#convex-problem-def">2 凸优化问题</a>
+  <a href="#optimality">3 最优性判据</a>
+  <a href="#equivalence">4 等价变换技巧</a>
+  <a href="#quasiconvex">5 拟凸优化问题</a>
+  <a href="#lp">6.1 线性规划 (LP)</a>
+  <a href="#qp">6.2 二次规划 (QP)</a>
+  <a href="#qcqc">6.3 QCQP</a>
+  <a href="#socp">6.4 二阶锥规划 (SOCP)</a>
+  <a href="#sdp">6.5 半正定规划 (SDP)</a>
+</div>
+
+<!-- ========== 1 STANDARD FORM ========== -->
+<div class="card" id="standard">
+<h2>1 优化问题标准形式 <span class="tag">P3-6</span></h2>
+
+<div class="def-box">
+<h3>标准形式</h3>
+<div class="eq">$$\begin{aligned}
+\min \quad & f_0(x) \\
+\text{s.t.} \quad & f_i(x) \leq 0, \quad i = 1, \dots, m \\
+& h_i(x) = 0, \quad i = 1, \dots, p
+\end{aligned}$$</div>
+<ul>
+  <li>$x \in \mathbb{R}^n$ — 优化变量</li>
+  <li>$f_0: \mathbb{R}^n \to \mathbb{R}$ — 目标函数</li>
+  <li>$f_i: \mathbb{R}^n \to \mathbb{R}$ — 不等式约束函数</li>
+  <li>$h_i: \mathbb{R}^n \to \mathbb{R}$ — 等式约束函数</li>
+  <li>$p^\star = \inf\{f_0(x) \mid f_i(x) \leq 0, h_i(x) = 0\}$ — 最优值</li>
+  <li>若问题不可行：$p^\star = \infty$</li>
+  <li>若问题无下界：$p^\star = -\infty$</li>
+</ul>
+</div>
+
+<h3>隐式约束</h3>
+<div class="info-box">
+<p>标准形式包含<strong>隐式约束</strong>：$x \in \mathcal{D} = \bigcap_{i=0}^m \mathrm{dom}\, f_i \cap \bigcap_{i=1}^p \mathrm{dom}\, h_i$</p>
+<p>$\mathcal{D}$ 被称为问题的<strong>定义域</strong>。</p>
+<p>$f_i(x) \leq 0$ 和 $h_i(x) = 0$ 是<strong>显式约束</strong>。</p>
+<p>若 $m=p=0$，则为<strong>无约束问题</strong>。</p>
+</div>
+
+<div class="exam-box">
+<p><strong>例子：</strong>$\min f_0(x) = -\sum_{i=1}^k \log(b_i - a_i^\top x)$</p>
+<p>这是一个<strong>无约束问题</strong>，但隐式约束为 $a_i^\top x &lt; b_i$。</p>
+</div>
+
+<h3>可行性问题</h3>
+<div class="def-box">
+<div class="eq">$$\begin{aligned}
+\text{find} \quad & x \\
+\text{s.t.} \quad & f_i(x) \leq 0, \; i=1,\dots,m \\
+& h_i(x) = 0, \; i=1,\dots,p
+\end{aligned}$$</div>
+<p>是目标函数为常数 $f_0(x)=0$ 的特例。</p>
+<ul>
+  <li>约束可行 $\implies p^\star = 0$</li>
+  <li>约束不可行 $\implies p^\star = \infty$</li>
+</ul>
+</div>
+</div>
+
+<!-- ========== 2 CONVEX PROBLEM ========== -->
+<div class="card" id="convex-problem-def">
+<h2>2 凸优化问题 <span class="tag">P8-10</span></h2>
+
+<div class="def-box">
+<h3>凸优化问题的标准形式</h3>
+<div class="eq">$$\begin{aligned}
+\min \quad & f_0(x) \\
+\text{s.t.} \quad & f_i(x) \leq 0, \quad i = 1, \dots, m \\
+& a_i^\top x = b_i, \quad i = 1, \dots, p
+\end{aligned}$$</div>
+<p><strong>关键要求：</strong></p>
+<ul>
+  <li>$f_0, f_1, \dots, f_m$ 是<strong>凸函数</strong></li>
+  <li>等式约束是<strong>仿射的</strong></li>
+  <li>若 $f_0$ 是拟凸函数，则为<strong>拟凸优化问题</strong></li>
+</ul>
+<p><strong>重要性质：</strong>凸优化问题的可行解集是<strong>凸集</strong>。</p>
+</div>
+
+<h3>局部最优 = 全局最优</h3>
+<div class="theorem-box">
+<p>任意凸优化问题的<strong>局部最优点也是全局最优点</strong>。</p>
+</div>
+
+<div class="proof-box">
+<div class="proof-label">💡 证明（反证法）</div>
+<p>假设 $x$ 是局部最优，但存在可行 $y$ 使得 $f_0(y) &lt; f_0(x)$。</p>
+<p>局部最优 $\implies$ 存在 $R&gt;0$，当 $z$ 可行且 $\|z-x\|_2 \leq R$ 时 $f_0(z) \geq f_0(x)$。</p>
+<p>令 $z = \theta y + (1-\theta)x$，取 $\theta = R/(2\|y-x\|_2)$，$0&lt;\theta&lt;1/2$，则 $\|z-x\|_2 = R/2$。</p>
+<p>由凸性：$f_0(z) \leq \theta f_0(y) + (1-\theta)f_0(x) &lt; f_0(x)$，与局部最优矛盾。</p>
+<p>故 $x$ 必为全局最优点。$\square$</p>
+</div>
+
+<div class="exam-box">
+<h4>非凸约束示例</h4>
+<div class="eq">$$\begin{aligned}
+\min \quad & x_1^2 + x_2^2 \\
+\text{s.t.} \quad & \frac{x_1}{1+x_2^2} \leq 0 \\
+& (x_1 + x_2)^2 = 0
+\end{aligned}$$</div>
+<ul>
+  <li>$f_0$ 是凸函数，可行域 $\{(x_1,x_2) \mid x_1 = -x_2 \leq 0\}$ 是凸集</li>
+  <li><strong>但不是凸优化问题</strong>：$f_1$ 非凸，$h_1$ 非仿射</li>
+  <li>等价（但不完全相同）为：$\min x_1^2+x_2^2$ s.t. $x_1 \leq 0,\; x_1+x_2=0$</li>
+</ul>
+</div>
+</div>
+
+<!-- ========== 3 OPTIMALITY ========== -->
+<div class="card" id="optimality">
+<h2>3 最优性判据 <span class="tag">P11-12</span></h2>
+
+<div class="theorem-box">
+<h3>可微函数的最优性条件</h3>
+<p>若目标函数 $f_0$ 可微，点 $x$ 是最优的 $\iff$</p>
+<ol>
+  <li>$x$ 是可行解</li>
+  <li>对所有可行点 $y$：$\nabla f_0(x)^\top (y - x) \geq 0$</li>
+</ol>
+<p><strong>几何含义：</strong>若 $\nabla f_0(x) \neq 0$，则其定义了一个<strong>支撑超平面</strong>。</p>
+</div>
+
+<h3>常见结构下的特例</h3>
+
+<div class="problem-type">
+<h4>1️⃣ 无约束问题</h4>
+<p>$\min f_0(x)$，最优充要条件：</p>
+<div class="eq">$$\nabla f_0(x) = 0$$</div>
+</div>
+
+<div class="problem-type">
+<h4>2️⃣ 等式约束问题</h4>
+<p>$\min f_0(x)$ s.t. $Ax = b$，存在 $\nu$ 使得：</p>
+<div class="eq">$$\begin{cases}
+x \in \mathrm{dom}\, f_0 \\
+Ax = b \\
+\nabla f_0(x) + A^\top \nu = 0
+\end{cases}$$</div>
+</div>
+
+<div class="problem-type">
+<h4>3️⃣ 非负正交域</h4>
+<p>$\min f_0(x)$ s.t. $x \geq 0$，最优充要条件：</p>
+<div class="eq">$$\begin{cases}
+x \in \mathrm{dom}\, f_0,\; x \succeq 0 \\
+\nabla f_0(x)_i \geq 0 &amp; \text{若 } x_i = 0 \\
+\nabla f_0(x)_i = 0 &amp; \text{若 } x_i &gt; 0
+\end{cases}$$</div>
+<p><strong>互补松弛形式：</strong>$x$ 与梯度对应分量不同时为非零。</p>
+</div>
+</div>
+
+<!-- ========== 4 EQUIVALENCE ========== -->
+<div class="card" id="equivalence">
+<h2>4 等价变换技巧 <span class="tag">P13-17</span></h2>
+
+<p>若两个问题的解可互相转换，则称它们<strong>等价</strong>。</p>
+
+<div class="grid-2">
+<div class="exam-box" style="margin:0;">
+<h4>🔹 消除等式约束</h4>
+<p>$Ax = b \iff x = Fz + x_0$</p>
+<p>原问题 $\to$ 等价于变量 $z$ 的问题：</p>
+<p>$\min f_0(Fz + x_0)$ s.t. $f_i(Fz + x_0) \leq 0$</p>
+<p>减少了变量个数。</p>
+</div>
+
+<div class="exam-box" style="margin:0;">
+<h4>🔹 引入等式约束</h4>
+<p>令 $y_i = A_i x + b_i$:</p>
+<p>原问题 $\to$ $\min f_0(y_0)$ s.t. $f_i(y_i) \leq 0,\; y_i = A_i x + b_i$</p>
+<p>增加了变量，但结构更清晰。</p>
+</div>
+</div>
+
+<div class="grid-2">
+<div class="exam-box" style="margin:0;">
+<h4>🔹 引入松弛变量</h4>
+<p>$a_i^\top x \leq b_i \implies a_i^\top x + s_i = b_i,\; s_i \geq 0$</p>
+<p>将不等式变为等式 + 非负约束。常用于 LP 单纯形法。</p>
+</div>
+
+<div class="exam-box" style="margin:0;">
+<h4>🔹 上图形式 (Epigraph)</h4>
+<p>$\min f_0(x) \implies \min t$ s.t. $f_0(x) - t \leq 0$</p>
+<p>将非线性目标函数转移到约束中，目标变成线性。</p>
+</div>
+</div>
+
+<div class="exam-box">
+<h4>🔹 部分最小化</h4>
+<p>原问题：$\min_{x_1,x_2} f_0(x_1,x_2)$ s.t. $f_i(x_1) \leq 0$</p>
+<p>令 $\tilde{f}_0(x_1) = \min_{x_2} f_0(x_1,x_2)$，问题变为：</p>
+<p>$\min_{x_1} \tilde{f}_0(x_1)$ s.t. $f_i(x_1) \leq 0$</p>
+<p><strong>意义：</strong>降维，或保留部分变量结构便于分布式算法（如 ADMM）。</p>
+</div>
+</div>
+
+<!-- ========== 5 QUASICONVEX ========== -->
+<div class="card" id="quasiconvex">
+<h2>5 拟凸优化问题 <span class="tag">P19-21</span></h2>
+
+<div class="def-box">
+<h3>定义</h3>
+<div class="eq">$$\begin{aligned}
+\min \quad & f_0(x) \\
+\text{s.t.} \quad & f_i(x) \leq 0, \quad i=1,\dots,m \\
+& Ax = b
+\end{aligned}$$</div>
+<p>其中 $f_0$ 是<strong>拟凸函数</strong>，$f_1,\dots,f_m$ 是凸函数。</p>
+</div>
+
+<h3>求解方法：二分法</h3>
+
+<div class="def-box">
+<p>拟凸函数的下水平集可表示为凸约束：</p>
+<p>$f_0(x) \leq t \iff \phi_t(x) \leq 0$</p>
+<p>其中 $\phi_t$ 是一族凸函数。</p>
+</div>
+
+<div class="exam-box">
+<h4>例子：$f_0(x) = \frac{p(x)}{q(x)}$</h4>
+<ul>
+  <li>$p(x)$ 凸且 $p(x) \geq 0$</li>
+  <li>$q(x)$ 凹且 $q(x) &gt; 0$</li>
+</ul>
+<p>令 $\phi_t(x) = p(x) - t q(x)$，则 $t \geq 0$ 时 $\phi_t$ 是凸函数，且</p>
+<p>$f_0(x) \leq t \iff \phi_t(x) \leq 0$</p>
+</div>
+
+<h3>二分法算法</h3>
+<div class="info-box">
+<pre>输入：l ≤ p*, u ≥ p*, 精度 ε > 0
+重复直到 u - l ≤ ε：
+  1. t := (l + u) / 2
+  2. 解凸可行性问题 φ_t(x) ≤ 0, f_i(x) ≤ 0, Ax = b
+  3. 若可行 → u := t；否则 l := t</pre>
+<p>需要 $\lceil \log_2 (\frac{u-l}{\varepsilon}) \rceil$ 次迭代。</p>
+</div>
+</div>
+
+<!-- ========== 6 PROBLEM TYPES ========== -->
+<div class="card">
+<h2>6 常见凸问题形式 <span class="tag">P23-35</span></h2>
+
+<!-- LP -->
+<div class="problem-type" id="lp">
+<h4>6.1 线性规划 (Linear Program, LP)</h4>
+<div class="eq">$$\begin{aligned}
+\min \quad & c^\top x + d \\
+\text{s.t.} \quad & Gx \leq h \\
+& Ax = b
+\end{aligned}$$</div>
+<p>仿射目标函数 + 仿射约束。可行域是<strong>多面体</strong>。</p>
+
+<div class="grid-2">
+<div class="exam-box" style="margin:0;">
+<h5>饮食问题 (Diet Problem)</h5>
+<p>$n$ 种食物，单价 $c_j$，营养素 $i$ 含量 $a_{ij}$，最少需要 $b_i$：</p>
+<p>$\min c^\top x$ s.t. $Ax \geq b,\; x \geq 0$</p>
+</div>
+<div class="exam-box" style="margin:0;">
+<h5>Chebyshev 中心</h5>
+<p>多面体 $P = \{x \mid a_i^\top x \leq b_i\}$ 的最大内切球：</p>
+<p>$\max r$ s.t. $a_i^\top x_c + r\|a_i\|_2 \leq b_i$</p>
+</div>
+</div>
+</div>
+
+<!-- QP -->
+<div class="problem-type" id="qp">
+<h4>6.2 二次规划 (Quadratic Program, QP)</h4>
+<div class="eq">$$\begin{aligned}
+\min \quad & \frac12 x^\top P x + q^\top x + r \\
+\text{s.t.} \quad & Gx \leq h \\
+& Ax = b
+\end{aligned}$$</div>
+<p>$P \in \mathbb{S}^n_+$，目标为凸二次函数，在多面体上最小化。</p>
+
+<div class="grid-2">
+<div class="exam-box" style="margin:0;">
+<h5>最小二乘 (Least-Squares)</h5>
+<p>$\min \|Ax - b\|_2^2$</p>
+<p>解析解 $x^\star = A^\dagger b$（广义逆）</p>
+<p>可添加约束 $l \leq x \leq u$</p>
+</div>
+<div class="exam-box" style="margin:0;">
+<h5>随机成本 LP</h5>
+<p>$\min \bar{c}^\top x + \gamma x^\top \Sigma x$</p>
+<p>s.t. $Gx \leq h$</p>
+<p>$\gamma &gt; 0$ 风险规避参数，平衡期望与方差。</p>
+</div>
+</div>
+</div>
+
+<!-- QCQP -->
+<div class="problem-type" id="qcqc">
+<h4>6.3 QCQP (Quadratically Constrained QP)</h4>
+<div class="eq">$$\begin{aligned}
+\min \quad & \frac12 x^\top P_0 x + q_0^\top x + r_0 \\
+\text{s.t.} \quad & \frac12 x^\top P_i x + q_i^\top x + r_i \leq 0 \\
+& Ax = b
+\end{aligned}$$</div>
+<p>$P_i \in \mathbb{S}^n_+$，目标与约束均为凸二次函数。</p>
+<p>可行域 = $m$ 个<strong>椭球</strong>与一个<strong>仿射集</strong>的交集。</p>
+</div>
+
+<!-- SOCP -->
+<div class="problem-type" id="socp">
+<h4>6.4 二阶锥规划 (SOCP)</h4>
+<div class="eq">$$\begin{aligned}
+\min \quad & f^\top x \\
+\text{s.t.} \quad & \|A_i x + b_i\|_2 \leq c_i^\top x + d_i \\
+& Fx = g
+\end{aligned}$$</div>
+<p>约束 = 二阶锥 (SOC) 约束，$(A_i x + b_i, c_i^\top x + d_i) \in \text{二阶锥}$。</p>
+<p>$\bullet$ 若 $n_i=0$，退化为 LP</p>
+<p>$\bullet$ 若 $c_i=0$，退化为 QCQP</p>
+<p>$\bullet$ 比 QCQP 和 LP 更一般</p>
+
+<h4>应用：鲁棒优化</h4>
+<div class="grid-2">
+<div class="exam-box" style="margin:0;">
+<h5>确定性鲁棒 LP</h5>
+<p>$a_i \in E_i = \{\bar{a}_i + P_i u \mid \|u\|_2 \leq 1\}$</p>
+<p>等价 SOCP：$\bar{a}_i^\top x + \|P_i^\top x\|_2 \leq b_i$</p>
+</div>
+<div class="exam-box" style="margin:0;">
+<h5>随机鲁棒 LP</h5>
+<p>$a_i \sim N(\bar{a}_i, \Sigma_i)$</p>
+<p>等价 SOCP（$\eta \geq 1/2$ 时）：</p>
+<p>$\bar{a}_i^\top x + \Phi^{-1}(\eta) \|\Sigma_i^{1/2} x\|_2 \leq b_i$</p>
+</div>
+</div>
+</div>
+
+<!-- SDP -->
+<div class="problem-type" id="sdp">
+<h4>6.5 半正定规划 (SDP)</h4>
+<div class="eq">$$\begin{aligned}
+\min \quad & c^\top x \\
+\text{s.t.} \quad & x_1 F_1 + x_2 F_2 + \cdots + x_n F_n + G \preceq 0 \\
+& Ax = b
+\end{aligned}$$</div>
+<p>$F_i, G \in \mathbb{S}^k$，不等式为<strong>线性矩阵不等式 (LMI)</strong>。</p>
+
+<h4>关系谱系</h4>
+<table>
+<tr><th>LP</th><td>$diag(Ax - b) \preceq 0$</td></tr>
+<tr><th>SOCP</th><td>$
+\begin{bmatrix}
+(c_i^\top x + d_i)I &amp; A_i x + b_i \\
+(A_i x + b_i)^\top &amp; c_i^\top x + d_i
+\end{bmatrix} \succeq 0
+$</td></tr>
+<tr><th>特征值最小化</th><td>$\min t$ s.t. $A(x) \preceq tI$</td></tr>
+</table>
+</div>
+</div>
+
+<!-- ========== SUMMARY ========== -->
+<div class="card">
+<h2>凸问题谱系一览</h2>
+
+<table>
+<tr><th>问题类型</th><th>目标函数</th><th>约束</th><th>复杂度</th></tr>
+<tr><td>LP</td><td>仿射</td><td>仿射</td><td>简单</td></tr>
+<tr><td>QP</td><td>凸二次</td><td>仿射</td><td>中等</td></tr>
+<tr><td>QCQP</td><td>凸二次</td><td>凸二次</td><td>中等</td></tr>
+<tr><td>SOCP</td><td>仿射</td><td>二阶锥</td><td>较复杂</td></tr>
+<tr><td>SDP</td><td>仿射</td><td>线性矩阵不等式</td><td>最一般</td></tr>
+</table>
+
+<p style="margin-top:12px;">$$LP \subset SOCP \subset SDP, \qquad QP \subset QCQP \subset SOCP$$</p>
+
+<div class="warn-box">
+<strong>⚠ 高频易错</strong>
+<ol>
+  <li><strong>非凸约束 ≠ 可行域非凸：</strong>即使可行域是凸集，非凸/非仿射的约束函数也使得问题不是凸优化问题。</li>
+  <li><strong>局部最优 ≠ 全局最优</strong>只在凸优化成立，拟凸优化中不一定。</li>
+  <li><strong>无约束 ≠ 无定义域：</strong>隐式约束（如 $\log$ 参数必须为正）仍然存在。</li>
+  <li><strong>SOCP 和 QCQP 的关系：</strong>SOCP 包含 QCQP，不是反过来。</li>
+</ol>
+</div>
+</div>
+
+<!-- ========== QUIZ ========== -->
+<div class="card">
+<h2>自测题</h2>
+
+<div class="quiz">
+<p><strong>Q1：</strong>$\min x^2$ s.t. $x^2 \leq 1$ 是凸优化问题吗？为什么？$x^3 \leq 0$ 呢？</p>
+<div class="answer">第一个是凸优化问题（$x^2$ 凸，$x^2 \leq 1$ 也是凸约束）。第二个也是——$x^3 \leq 0 \iff x \leq 0$，$x \leq 0$ 是仿射约束。</div>
+<button class="toggle-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+</div>
+
+<div class="quiz">
+<p><strong>Q2：</strong>LP 和 SOCP 的关系是什么？</p>
+<div class="answer">LP ⊂ SOCP。SOCP 的约束中若 $A_i = 0$（零矩阵），则退化为 $0 \leq c_i^\top x + d_i$，即线性不等式。故 LP 是 SOCP 的特例。</div>
+<button class="toggle-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+</div>
+
+<div class="quiz">
+<p><strong>Q3：</strong>拟凸优化问题可以用什么方法求解？</p>
+<div class="answer">二分法（Bisection Method）。每次将拟凸优化转化为凸可行性问题求解，时间复杂度 $\lceil \log_2((u-l)/\varepsilon) \rceil$ 次凸可行性检查。</div>
+<button class="toggle-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+</div>
+
+<div class="quiz">
+<p><strong>Q4：</strong>SDP 中的线性矩阵不等式 (LMI) 是什么意思？</p>
+<div class="answer">LMI 是形如 $x_1F_1 + \cdots + x_nF_n + G \preceq 0$ 的约束，其中 $\preceq$ 表示矩阵半负定。SDP 的约束是凸的（因为半正定矩阵集是凸锥）。</div>
+<button class="toggle-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+</div>
+</div>
+
+<div class="footer">
+  优化理论 · 第5章 凸问题 | 上海财经大学 · 郭加熠 | 基于35页课件整理
+</div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</body>
+</html>
