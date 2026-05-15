@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优化理论 · 第5章 · 凸函数</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8f9fa; color: #1a1a2e; line-height:1.7; }
+.container { max-width:960px; margin:0 auto; padding:20px; }
+.header { background: linear-gradient(135deg,#3730a3 0%,#6366f1 100%); color:#fff; padding:40px 0; text-align:center; border-radius:0 0 20px 20px; margin-bottom:30px; }
+.header h1 { font-size:28px; margin-bottom:8px; }
+.header .sub { color:#c7d2fe; font-size:14px; }
+.header .info { color:#e0e7ff; font-size:13px; margin-top:8px; }
+.card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size:20px; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #e2e8f0; }
+.card h2 .tag { font-size:12px; background:#6366f1; color:#fff; padding:2px 10px; border-radius:12px; margin-left:8px; vertical-align:middle; }
+.card h3 { font-size:16px; margin:16px 0 8px; color:#2d3748; }
+.card h4 { font-size:14px; margin:12px 0 6px; color:#4a5568; }
+.toc { background:#eef2ff; border-radius:12px; padding:20px; margin-bottom:20px; }
+.toc h3 { font-size:16px; margin-bottom:12px; color:#3730a3; }
+.toc a { display:block; padding:4px 0; color:#3730a3; text-decoration:none; font-size:14px; }
+.toc a:hover { text-decoration:underline; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+th { background:#eef2ff; text-align:left; padding:10px 12px; font-weight:600; }
+td { padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+pre { background:#1e1e2e; color:#cdd6f4; border-radius:8px; padding:16px; overflow-x:auto; font-size:13px; line-height:1.6; margin:12px 0; }
+code { font-family:'JetBrains Mono','Fira Code',monospace; }
+:not(pre) > code { background:#eef2ff; padding:2px 6px; border-radius:4px; font-size:13px; }
+.info-box { background:#eef2ff; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.warn-box { background:#fef2f2; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.tip-box { background:#f0fff4; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.quiz { margin:12px 0; padding:14px; background:#faf5ff; border-radius:8px; border-left:3px solid #6366f1; }
+.quiz p { font-weight:500; }
+.quiz .answer { display:none; margin-top:8px; padding:10px; background:#fff; border-radius:6px; font-size:14px; }
+.quiz .toggle-btn { background:#6366f1; color:#fff; border:none; padding:4px 14px; border-radius:4px; cursor:pointer; font-size:12px; margin-top:6px; }
+.footer { text-align:center; font-size:12px; color:#a0aec0; padding:30px 0; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+.eq { margin:8px 0; padding:8px 0; overflow-x:auto; }
+.def-box { background:#eef2ff; border-left:3px solid #6366f1; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; }
+.theorem-box { background:#f0fff4; border-left:3px solid #22c55e; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; }
+.proof-box { background:#f0fdf4; border-left:3px solid #86efac; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; font-size:14px; }
+.proof-box .proof-label { font-size:12px; color:#16a34a; font-weight:600; margin-bottom:4px; }
+.case-box { background:#fffbeb; border-left:3px solid #f59e0b; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; }
+.exam-box { background:#f0f9ff; border-left:3px solid #3b82f6; border-radius:0 8px 8px 0; padding:12px 16px; margin:10px 0; }
+.cond-table td:first-child { font-weight:600; white-space:nowrap; }
+@media (max-width:640px) { .grid-2 { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>优化理论 · 第5章</h1>
+  <div class="sub">凸函数 (Convex Function)</div>
+  <div class="info">上海财经大学 · 郭加熠 · 34页课件</div>
+</div>
+
+<div class="toc">
+  <h3>📖 学习地图</h3>
+  <a href="#def">1 凸函数定义</a>
+  <a href="#examples">2 常见凸/凹函数举例</a>
+  <a href="#verify">3 验证凸性</a>
+  <a href="#first-order">3.1 一阶条件</a>
+  <a href="#second-order">3.2 二阶条件</a>
+  <a href="#reduction">3.3 化归为标量函数</a>
+  <a href="#epigraph">3.4 上图法</a>
+  <a href="#ops">4 保持凸性的运算</a>
+  <a href="#quasi">5 拟凸性</a>
+  <a href="#conjugate">6 共轭函数</a>
+</div>
+
+<!-- ========== 1 DEFINITION ========== -->
+<div class="card" id="def">
+<h2>1 凸函数定义 <span class="tag">P3-4</span></h2>
+
+<div class="def-box">
+<h3>凸函数 (Convex Function)</h3>
+<p>函数 $f$ 是<strong>凸函数</strong>当且仅当：</p>
+<ol style="margin:8px 0 0 20px;">
+  <li>$\mathrm{dom}(f)$ 是一个凸集</li>
+  <li>对任意 $x_1, x_2 \in \mathrm{dom}(f)$ 且 $\theta \in [0, 1]$，有：
+    <div class="eq">$$f(\theta x_1 + (1-\theta)x_2) \leq \theta f(x_1) + (1-\theta)f(x_2)$$</div>
+  </li>
+</ol>
+<p style="margin-top:8px;"><strong>思考：</strong>若上述不等式仅在 $\theta = 1/2$ 成立，函数是否为凸函数？</p>
+</div>
+
+<div class="def-box">
+<h3>严格凸 (Strictly Convex)</h3>
+<p>若 $\mathrm{dom}(f)$ 是凸集，且</p>
+<div class="eq">$$f(\theta x_1 + (1-\theta)x_2) < \theta f(x_1) + (1-\theta)f(x_2)$$
+对所有 $x_1 \neq x_2 \in \mathrm{dom}(f)$ 且 $\theta \in (0, 1)$ 成立，则称 $f$ 是<strong>严格凸函数</strong>。</p>
+</div>
+
+<div class="def-box">
+<h3>凹函数 (Concave)</h3>
+<p>若 $-f$ 是凸函数，则 $f$ 是<strong>凹函数</strong>。<br>
+若 $-f$ 是严格凸函数，则 $f$ 是<strong>严格凹函数</strong>。</p>
+</div>
+</div>
+
+<!-- ========== 2 EXAMPLES ========== -->
+<div class="card" id="examples">
+<h2>2 常见凸/凹函数举例 <span class="tag">P6-7</span></h2>
+
+<h3>在 R 上的例子</h3>
+<div class="grid-2">
+<div>
+<div class="info-box" style="margin:0;">
+<strong>凸函数 (Convex)：</strong>
+<ul style="margin:6px 0 0 16px;">
+  <li><strong>仿射函数：</strong>$ax + b$，$a,b \in \mathbb{R}$</li>
+  <li><strong>指数函数：</strong>$e^{ax}$，$a \in \mathbb{R}$</li>
+  <li><strong>幂函数：</strong>$x^p$，$x&gt;0$，$p \geq 1$ 或 $p \leq 0$</li>
+  <li><strong>绝对值幂函数：</strong>$|x|^p$，$p \geq 1$</li>
+  <li><strong>负熵函数：</strong>$x \ln x$，$x &gt; 0$</li>
+</ul>
+</div>
+</div>
+<div>
+<div class="info-box" style="margin:0; background:#fffbeb;">
+<strong>凹函数 (Concave)：</strong>
+<ul style="margin:6px 0 0 16px;">
+  <li><strong>仿射函数：</strong>$ax + b$</li>
+  <li><strong>幂函数：</strong>$x^p$，$0 \leq p \leq 1$</li>
+  <li><strong>对数函数：</strong>$\ln x$，$x &gt; 0$</li>
+</ul>
+</div>
+</div>
+</div>
+
+<h3>多变量例子</h3>
+
+<div class="exam-box">
+<h4>仿射函数</h4>
+<p>$f(x) = a^\top x + b$<br>$f(X) = \mathrm{tr}(A^\top X) + b = \sum_{i=1}^m \sum_{j=1}^n a_{ij}x_{ij} + b$</p>
+<p>仿射函数既是凸的也是凹的。</p>
+</div>
+
+<div class="exam-box">
+<h4>范数 (Norms) — 凸函数</h4>
+<ul>
+  <li>$l_p$ 范数：$\|x\|_p = \big(\sum_{i=1}^n |x_i|^p\big)^{1/p}$</li>
+  <li>谱范数（最大奇异值）：$\|X\|_2 = \sigma_{\max}(A) = \sqrt{\lambda_{\max}(A^\top A)}$</li>
+</ul>
+</div>
+</div>
+
+<!-- ========== 3 VERIFYING CONVEXITY ========== -->
+<div class="card" id="verify">
+<h2>3 验证凸性的方法 <span class="tag">P9</span></h2>
+
+<p>共有 <strong>7 种方法</strong>验证一个给定函数是否为凸函数：</p>
+
+<table>
+<tr><th>#</th><th>方法</th><th>说明</th></tr>
+<tr><td>1</td><td>定义 (Definition)</td><td>直接验证 $f(\theta x + (1-\theta)y) \leq \theta f(x) + (1-\theta)f(y)$</td></tr>
+<tr><td>2</td><td>特殊判据</td><td>应用一些特殊判据</td></tr>
+<tr><td>3</td><td>一阶条件</td><td>可微时：$f(y) \geq f(x) + \nabla f(x)^\top (y - x)$</td></tr>
+<tr><td>4</td><td>二阶条件</td><td>二阶可微时：$\nabla^2 f(x) \succeq 0$</td></tr>
+<tr><td>5</td><td>化归为标量函数</td><td>限制到任意直线上仍是凸的</td></tr>
+<tr><td>6</td><td>上图法</td><td>$\mathrm{epi}\, f$ 是凸集</td></tr>
+<tr><td>7</td><td>保持凸性运算</td><td>证明 $f$ 是通过保持凸性的操作构造得到的</td></tr>
+</table>
+</div>
+
+<!-- ========== 3.1 FIRST-ORDER ========== -->
+<div class="card" id="first-order">
+<h2>3.1 一阶条件 <span class="tag">P10-12</span></h2>
+
+<div class="theorem-box">
+<h4>一阶条件定理</h4>
+<p>可微函数 $f$ 是<strong>凸函数</strong>当且仅当它的定义域是凸集，且满足：</p>
+<div class="eq">$$f(x) + \nabla f(x)^\top (y - x) \leq f(y) \quad \forall x, y \in \mathrm{dom}(f)$$</div>
+<p style="margin-top:6px;"><strong>几何含义：</strong>一阶近似（切线/切平面）是 $f$ 的一个<strong>全局下界</strong> (global under-estimator)。</p>
+<p><strong>推论：</strong>对于无约束优化问题，$\nabla f(x^*) = 0$ 是最优解的一阶必要条件。</p>
+</div>
+
+<div class="proof-box">
+<div class="proof-label">💡 证明思路（必要性）</div>
+<p>假设 $f$ 是凸函数。对任意 $x, y \in \mathrm{dom}f$，$\theta \in [0,1]$：</p>
+<div class="eq">$$f(x + \theta(y-x)) = f((1-\theta)x + \theta y) \leq (1-\theta)f(x) + \theta f(y)$$</div>
+<p>变形得：</p>
+<div class="eq">$$f(y) \geq \frac{1}{\theta}[f(x + \theta(y-x)) - (1-\theta)f(x)] = f(x) + \frac{f(x + \theta(y-x)) - f(x)}{\theta}$$</div>
+<p>令 $\theta \to 0$，由方向导数的定义 $\lim_{\theta \to 0} \frac{f(x + \theta d) - f(x)}{\theta} = \nabla f(x)^\top d$，即得：</p>
+<div class="eq">$$f(y) \geq f(x) + \nabla f(x)^\top (y - x)$$</div>
+</div>
+
+<div class="proof-box">
+<div class="proof-label">💡 证明思路（充分性）</div>
+<p>假设一阶条件成立。对任意 $x, y$ 和 $\theta \in [0,1]$，令 $z = \theta x + (1-\theta)y$：</p>
+<div class="eq">$$\begin{aligned}
+f(x) &\geq f(z) + \nabla f(z)^\top (x - z) \\
+f(y) &\geq f(z) + \nabla f(z)^\top (y - z)
+\end{aligned}$$</div>
+<p>加权求和：</p>
+<div class="eq">$$\begin{aligned}
+\theta f(x) + (1-\theta)f(y) &\geq f(z) + \nabla f(z)^\top[\theta(x - z) + (1-\theta)(y - z)] \\
+&= f(z) + \nabla f(z)^\top[\theta x + (1-\theta)y - z] \\
+&= f(z)
+\end{aligned}$$</div>
+<p>即 $\theta f(x) + (1-\theta)f(y) \geq f(\theta x + (1-\theta)y)$，凸性得证。</p>
+</div>
+</div>
+
+<!-- ========== 3.2 SECOND-ORDER ========== -->
+<div class="card" id="second-order">
+<h2>3.2 二阶条件 <span class="tag">P14-17</span></h2>
+
+<h3>Hessian 矩阵回顾</h3>
+<div class="info-box">
+<p>函数 $f$ 是<strong>二阶可微</strong>的，当 $\mathrm{dom}(f)$ 是开集，且 Hessian 矩阵 $\nabla^2 f(x) \in \mathbb{S}^n$ 存在，即：</p>
+<div class="eq">$$[\nabla^2 f(x)]_{ij} = \frac{\partial^2 f(x)}{\partial x_i \partial x_j}, \quad i, j = 1, \dots, n$$</div>
+<p>泰勒展开（多变量）：$f(x + a) = f(x) + \nabla f(x)^\top a + \frac{1}{2}a^\top \nabla^2 f(x) a + \cdots$</p>
+</div>
+
+<div class="theorem-box">
+<h4>二阶条件定理</h4>
+<p>对于定义域为凸集的<strong>二阶可微</strong>函数 $f$：</p>
+<ul>
+  <li>$f$ 是<strong>凸函数</strong> $\iff$ $\nabla^2 f(x) \succeq 0$ 对所有 $x \in \mathrm{dom}(f)$</li>
+  <li>若 $\nabla^2 f(x) \succ 0$，则 $f$ 是<strong>严格凸函数</strong>（但逆命题不成立，如 $f(x)=x^4$）</li>
+</ul>
+</div>
+
+<div class="proof-box">
+<div class="proof-label">💡 证明思路</div>
+<p><strong>充分性：</strong>若 $\nabla^2 f \succeq 0$，由泰勒展开：</p>
+<div class="eq">$$f(y) = f(x) + \nabla f(x)^\top(y-x) + \tfrac12 (y-x)^\top \nabla^2 f(x)(y-x) + \cdots \geq f(x) + \nabla f(x)^\top(y-x)$$</div>
+<p>即一阶条件成立，故 $f$ 是凸函数。</p>
+<p style="margin-top:8px;"><strong>必要性：</strong>若 $f$ 是凸函数，由一阶条件：</p>
+<div class="eq">$$\begin{aligned}
+f(y) &\geq f(x) + \nabla f(x)^\top (y-x) \\
+f(x) &\geq f(y) + \nabla f(y)^\top (x-y)
+\end{aligned}$$</div>
+<p>相加得 $(\nabla f(x) - \nabla f(y))^\top (x - y) \geq 0$。</p>
+<p>由广义中值定理，存在 $\theta \in (0,1)$ 使 $\nabla f(x) - \nabla f(y) = \nabla^2 f(\theta x + (1-\theta)y)(x - y)$，代入得：</p>
+<div class="eq">$$(x - y)^\top \nabla^2 f(\theta x + (1-\theta)y)(x - y) \geq 0$$</div>
+<p>令 $y \to x$ 得 $\nabla^2 f(x) \succeq 0$。</p>
+</div>
+
+<h3>经典例子</h3>
+
+<div class="exam-box">
+<h4>二次函数 (Quadratic)</h4>
+<p>$f(x) = \frac12 x^\top P x + q^\top x + r$，$P$ 对称</p>
+<p>$\nabla f(x) = Px + q$，$\nabla^2 f(x) = P$</p>
+<p>当 $P \succeq 0$ 时 $f$ 是凸函数。</p>
+<p><strong>自测：</strong>$f(x_1, x_2) = x_1^2 - 3x_1x_2 + x_2^2$ 是凸函数吗？<br>
+（提示：令 $x_1 = u+v, x_2 = u-v$ 试试）</p>
+</div>
+
+<div class="exam-box">
+<h4>最小二乘目标 (Least-squares)</h4>
+<p>$f(x) = \|Ax - b\|_2^2$，$A \in \mathbb{R}^{m \times n}$</p>
+<p>$\nabla f(x) = 2A^\top(Ax - b)$，$\nabla^2 f(x) = 2A^\top A$</p>
+<p>对任意 $A$，$f$ 是<strong>凸函数</strong>（因为 $A^\top A \succeq 0$ 恒成立）</p>
+</div>
+
+<div class="exam-box">
+<h4>分母为线性函数的二次型 (Quadratic-over-linear)</h4>
+<p>$f(x, y) = \dfrac{x^2}{y}$，$\mathrm{dom}\, f = \{(x,y) \mid y &gt; 0\}$</p>
+<p>当 $y &gt; 0$ 时是<strong>凸函数</strong></p>
+</div>
+</div>
+
+<!-- ========== 3.3 REDUCTION TO SCALAR ========== -->
+<div class="card" id="reduction">
+<h2>3.3 化归为标量函数 <span class="tag">P19</span></h2>
+
+<div class="theorem-box">
+<h4>限制在直线上的凸性</h4>
+<p>$f: \mathbb{R}^n \to \mathbb{R}$ 是凸函数 $\iff$ $\mathrm{dom}\, f$ 是凸集，且如下定义的标量函数 $g: \mathbb{R} \to \mathbb{R}$ 是凸函数：</p>
+<div class="eq">$$g(t) = f(x + tv), \quad \mathrm{dom}\, g = \{t \mid x + tv \in \mathrm{dom}\, f\}$$</div>
+<p>对任意 $x \in \mathrm{dom}\, f$ 和任意 $v \in \mathbb{R}^n$。</p>
+<p>通过<strong>一元函数的凸性</strong>验证<strong>多变量函数</strong>的凸性。</p>
+</div>
+
+<div class="exam-box">
+<h4>例子：$f(X) = -\ln \det X$, $\mathrm{dom}\, f = \mathbb{S}^n_{++}$</h4>
+<div class="eq">$$\begin{aligned}
+g(t) &= -\ln\det(X + tV) \\
+&= -\ln\det X - \ln\det(I + t X^{-1/2}VX^{-1/2}) \\
+&= -\ln\det X - \sum_{i=1}^n \ln(1 + t\lambda_i)
+\end{aligned}$$</div>
+<p>其中 $\lambda_i$ 是 $X^{-1/2}VX^{-1/2}$ 的特征值。由于 $g(t)$ 对任意 $V$ 且 $X \succ 0$ 都是凸的，故 $f$ 是凸函数。</p>
+</div>
+</div>
+
+<!-- ========== 3.4 EPIGRAPH ========== -->
+<div class="card" id="epigraph">
+<h2>3.4 上图法 <span class="tag">P21</span></h2>
+
+<h3>下水平集 (Sublevel Set)</h3>
+<div class="info-box">
+<p>$\alpha$-下水平集：$C_\alpha = \{x \in \mathrm{dom}\, f \mid f(x) \leq \alpha\}$</p>
+<p>凸函数的<strong>下水平集是凸集</strong>（反过来不成立！）</p>
+</div>
+
+<h3>上图集 (Epigraph)</h3>
+<div class="def-box">
+<p>$\mathrm{epi}\, f = \{(x, t) \in \mathbb{R}^{n+1} \mid x \in \mathrm{dom}\, f,\; f(x) \leq t\}$</p>
+<p>函数 $f$ 是凸的 $\iff$ $\mathrm{epi}\, f$ 是凸集。</p>
+</div>
+</div>
+
+<!-- ========== 4 OPERATIONS ========== -->
+<div class="card" id="ops">
+<h2>4 保持凸性的运算 <span class="tag">P23-29</span></h2>
+
+<p>以下运算<strong>保持</strong>函数的凸性：</p>
+
+<table class="cond-table">
+<tr><th>运算</th><th>条件</th><th>例子</th></tr>
+<tr>
+  <td>正数缩放</td>
+  <td>$f$ 凸，$\lambda \geq 0 \implies \lambda f$ 凸</td>
+  <td>$2\|x\|$</td>
+</tr>
+<tr>
+  <td>求和</td>
+  <td>$f_1, f_2$ 凸 $\implies f_1 + f_2$ 凸</td>
+  <td>$\|x\| + e^x$</td>
+</tr>
+<tr>
+  <td>与仿射函数复合</td>
+  <td>$f(Ax + b)$ 凸（若 $f$ 凸）</td>
+  <td>$\|Ax + b\|$</td>
+</tr>
+<tr>
+  <td>逐点最大值</td>
+  <td>$f(x) = \max\{f_1(x), \dots, f_m(x)\}$ 凸</td>
+  <td>分段线性函数 $\max_i(a_i^\top x + b_i)$</td>
+</tr>
+<tr>
+  <td>逐点上确界</td>
+  <td>$g(x) = \sup_{y \in \mathcal{A}} f(x, y)$ 凸</td>
+  <td>支撑函数 $S_\mathcal{C}(x) = \sup_{z \in \mathcal{C}} z^\top x$</td>
+</tr>
+<tr>
+  <td>标量函数复合</td>
+  <td>$f(x) = h(g(x))$，$g$ 凸且 $h$ 凸非减</td>
+  <td>$e^{g(x)}$（$g$ 凸）</td>
+</tr>
+<tr>
+  <td>向量函数复合</td>
+  <td>$h(g_1(x), \dots, g_k(x))$，$g_i$ 凸，$h$ 每变量凸非减</td>
+  <td>$\log\sum e^{g_i(x)}$</td>
+</tr>
+<tr>
+  <td>最小化</td>
+  <td>$g(x) = \inf_{y \in C} f(x, y)$，$f$ 凸 $C$ 凸</td>
+  <td>$\mathrm{dist}(x, C) = \inf_{y \in C} \|x - y\|$</td>
+</tr>
+</table>
+
+<h3>4.1 仿射函数复合</h3>
+<div class="exam-box">
+<p><strong>例子：线性不等式的对数障碍函数</strong></p>
+<div class="eq">$$f(x) = -\sum_{i=1}^m \ln(b_i - a_i^\top x)$$</div>
+<p>定义域：$\{x \mid a_i^\top x &lt; b_i, i=1,\dots,m\}$</p>
+<p>这是 $-\ln(b_i - a_i^\top x)$ 求和，每个 $-\ln$ 是凸函数（$-\ln x$ 凸），复合仿射函数保持凸性。</p>
+</div>
+
+<div class="exam-box">
+<p><strong>例子：最大的 $r$ 个分量之和</strong></p>
+<p>$f(x) = x_{[1]} + x_{[2]} + \cdots + x_{[r]}$ 是凸函数</p>
+<p>证明：$f(x) = \max\{x_{i_1} + x_{i_2} + \cdots + x_{i_r} \mid 1 \leq i_1 &lt; \cdots &lt; i_r \leq n\}$</p>
+<p>这是多个线性函数的逐点最大值 → 凸函数。</p>
+</div>
+
+<h3>4.2 与标量函数复合</h3>
+<div class="def-box">
+<p>$f(x) = h(g(x))$，则 $f$ 是凸函数当满足以下条件之一：</p>
+<div class="grid-2">
+<div class="info-box" style="margin:0;">
+<strong>条件 A：</strong>
+<ul><li>$g$ 凸</li><li>$h$ 凸且<strong>非减</strong></li></ul>
+</div>
+<div class="info-box" style="margin:0;">
+<strong>条件 B：</strong>
+<ul><li>$g$ 凹</li><li>$h$ 凸且<strong>非增</strong></li></ul>
+</div>
+</div>
+<p style="margin-top:8px;"><strong>例子：</strong></p>
+<ul>
+  <li>$e^{g(x)}$ 凸（若 $g$ 凸） — 指数函数 $e^t$ 凸且非减</li>
+  <li>$1/g(x)$ 凸（若 $g$ 凹且为正）— $1/t$ 在 $t&gt;0$ 上凸且非增</li>
+</ul>
+</div>
+
+<h3>4.3 与向量函数复合</h3>
+<div class="def-box">
+<p>$f(x) = h(g_1(x), \dots, g_k(x))$，则 $f$ 是凸函数当满足以下条件之一：</p>
+<div class="grid-2">
+<div class="info-box" style="margin:0;">
+<strong>条件 A：</strong>
+<ul><li>每个 $g_i$ 凸</li><li>$h$ 每变量凸且<strong>非减</strong></li></ul>
+</div>
+<div class="info-box" style="margin:0;">
+<strong>条件 B：</strong>
+<ul><li>每个 $g_i$ 凹</li><li>$h$ 每变量凸且<strong>非增</strong></li></ul>
+</div>
+</div>
+<p style="margin-top:8px;"><strong>例子：</strong>$\log\big(\sum_{i=1}^k e^{g_i(x)}\big)$ — 当每个 $g_i$ 凸时是凸函数</p>
+</div>
+
+<h3>4.4 最小化</h3>
+<div class="theorem-box">
+<p>若 $f(x, y)$ 关于 $(x, y)$ 是凸函数，且 $C$ 是一个凸集，则</p>
+<div class="eq">$$g(x) = \inf_{y \in C} f(x, y)$$</div>
+<p>是关于 $x$ 的凸函数。定义域：$\mathrm{dom}\, g = \{x \mid (x, y) \in \mathrm{dom}\, f \text{ for some } y \in C\}$</p>
+</div>
+
+<div class="exam-box">
+<p><strong>例子：集合的距离</strong>
+$\mathrm{dist}(x, C) = \inf_{y \in C} \|x - y\|$，当 $C$ 是凸集时，$\mathrm{dist}(x, C)$ 是凸函数。</p>
+</div>
+</div>
+
+<!-- ========== 5 QUASI-CONVEXITY ========== -->
+<div class="card" id="quasi">
+<h2>5 拟凸性 (Quasi-Convexity) <span class="tag">P31-32</span></h2>
+
+<div class="def-box">
+<h3>拟凸函数定义</h3>
+<p>$f: \mathbb{R}^n \to \mathbb{R}$ 是<strong>拟凸函数</strong> $\iff$ $\mathrm{dom}\, f$ 是凸集，且对所有 $\alpha$：</p>
+<div class="eq">$$S_\alpha = \{x \in \mathrm{dom}\, f \mid f(x) \leq \alpha\}$$</div>
+<p>都是凸集。</p>
+<p><strong>等价定义：</strong></p>
+<div class="eq">$$f(\theta x + (1-\theta)y) \leq \max\{f(x), f(y)\}, \quad \theta \in [0,1]$$</div>
+<p>凸函数一定是拟凸函数，反之不成立。</p>
+</div>
+
+<h3>例子</h3>
+<div class="grid-2">
+<div class="exam-box" style="margin:0;">
+<ul>
+  <li>$\sqrt{|x|}$ 在 $\mathbb{R}$ 上是拟凸的</li>
+  <li>$\log x$ 在 $\mathbb{R}_+$ 上是拟凸的</li>
+  <li>$f(x_1, x_2) = -x_1x_2$ 在 $\mathbb{R}^2_{++}$ 上是拟凸的</li>
+</ul>
+</div>
+<div class="exam-box" style="margin:0;">
+<p><strong>距离比函数：</strong></p>
+<p>$f(x) = \dfrac{\|x - a\|_2}{\|x - b\|_2}$</p>
+<p>在 $\mathrm{dom}\, f = \{x : \|x - a\|_2 \leq \|x - b\|_2\}$ 上是拟凸的。</p>
+</div>
+</div>
+</div>
+
+<!-- ========== 6 CONJUGATE ========== -->
+<div class="card" id="conjugate">
+<h2>6 共轭函数 (Conjugate Function) <span class="tag">P33-34</span></h2>
+
+<div class="def-box">
+<h3>定义</h3>
+<p>函数 $f$ 的<strong>共轭函数</strong>定义为：</p>
+<div class="eq">$$f^*(y) = \sup_{x \in \mathrm{dom}\, f} \big( y^\top x - f(x) \big)$$</div>
+<ul>
+  <li>$f^*$ 是凸函数（<strong>即使 $f$ 不是凸的</strong>）— 因为它是线性函数的逐点上确界</li>
+</ul>
+</div>
+
+<h3>重要性质</h3>
+<div class="theorem-box">
+<h4>Fenchel 不等式 (Fenchel's Inequality)</h4>
+<p>对所有 $x, y$：</p>
+<div class="eq">$$f(x) + f^*(y) \geq y^\top x$$</div>
+</div>
+
+<div class="theorem-box">
+<h4>共轭的共轭</h4>
+<p>如果 $f$ 是凸函数且 $\mathrm{epi}\, f$ 是闭集，则 $f^{**} = f$（<strong>双共轭回归</strong>）。</p>
+<p>如果 $f$ 不是凸的，$f^{**}$ 是 $f$ 的<strong>凸化</strong>（凸包络）。</p>
+</div>
+
+<div class="info-box">
+<p><strong>在优化中的应用：</strong>共轭函数在<strong>拉格朗日对偶</strong> (Lagrange Dual) 问题中非常有用，是推导对偶函数的关键工具。</p>
+</div>
+
+<h3>例子</h3>
+<div class="exam-box">
+<h4>仿射函数：$f(x) = a^\top x + b$</h4>
+<div class="eq">$$f^*(y) = \sup_x \big( y^\top x - a^\top x - b \big) =
+\begin{cases}
+-b & \text{若 } y = a \\
+\infty & \text{否则}
+\end{cases}$$</div>
+</div>
+
+<div class="exam-box">
+<h4>负对数函数：$f(x) = -\log x$</h4>
+<div class="eq">$$f^*(y) = \sup_{x &gt; 0} (yx + \log x) =
+\begin{cases}
+-1 - \log(-y) & \text{若 } y &lt; 0 \\
+\infty & \text{否则}
+\end{cases}$$</div>
+</div>
+
+<div class="exam-box">
+<h4>严格凸二次函数：$f(x) = \frac12 x^\top Q x$，$Q \in \mathbb{S}^n_{++}$</h4>
+<div class="eq">$$f^*(y) = \sup_x \big( y^\top x - \tfrac12 x^\top Q x \big) = \frac12 y^\top Q^{-1} y$$</div>
+<p>二次函数和它的共轭函数通过 $Q$ 和 $Q^{-1}$ 形成对偶关系。</p>
+</div>
+</div>
+
+<!-- ========== SUMMARY ========== -->
+<div class="card">
+<h2>查漏补缺 <span class="tag">易错点</span></h2>
+
+<div class="warn-box">
+<strong>⚠ 高频错误</strong>
+<ol style="margin:8px 0 0 16px;">
+  <li><strong>下水平集是凸集 ⟹ 凸函数？</strong> 不成立！拟凸函数的下水平集也是凸集。</li>
+  <li><strong>严格凸的 Hessian 正定？</strong> $f(x)=x^4$ 是严格凸，但 $f''(0)=0$，不是正定。</li>
+  <li><strong>仿射函数是凸还是凹？</strong> 两者都是！</li>
+  <li><strong>凸函数之和是凸的？</strong> 是，但如果两个凹函数之和可能既不是凸也不是凹。</li>
+  <li><strong>共轭函数要求 $f$ 凸？</strong> 不，共轭对任意 $f$ 都定义，且 $f^*$ 总是凸的。</li>
+</ol>
+</div>
+</div>
+
+<!-- ========== QUIZ ========== -->
+<div class="card">
+<h2>自测题</h2>
+
+<div class="quiz">
+<p><strong>Q1：</strong>$f(x) = \|Ax - b\|_2^2$ 为什么是凸函数？</p>
+<div class="answer">$f$ 是二次函数 $x^\top(A^\top A)x - 2b^\top A x + b^\top b$，其中 $A^\top A \succeq 0$（半正定），由二阶条件，Hessian $= 2A^\top A \succeq 0$，故凸。</div>
+<button class="toggle-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+</div>
+
+<div class="quiz">
+<p><strong>Q2：</strong>下列说法正确的是？<br>
+A. 凸函数的下水平集一定是凸集<br>
+B. 下水平集是凸集的函数一定是凸函数<br>
+C. 拟凸函数一定是凸函数<br>
+D. 凸函数一定是拟凸函数</p>
+<div class="answer">A 和 D 正确。B 是拟凸函数的定义，但拟凸不一定是凸。C 反过来说了，凸函数一定是拟凸，但拟凸不一定是凸。</div>
+<button class="toggle-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+</div>
+
+<div class="quiz">
+<p><strong>Q3：</strong>$f(x,y) = \frac{x^2}{y}$ 在 $y &gt; 0$ 上的凸性如何？</p>
+<div class="answer">凸函数。计算 Hessian：<br>
+$\nabla^2 f = \begin{pmatrix} 2/y &amp; -2x/y^2 \\ -2x/y^2 &amp; 2x^2/y^3 \end{pmatrix}$<br>
+其特征值为 $0$ 和 $2(1+x^2)/y^3$，均非负，故半正定。</div>
+<button class="toggle-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+</div>
+
+<div class="quiz">
+<p><strong>Q4：</strong>$f(x) = \ln(\sum_{i=1}^k e^{g_i(x)})$，若每个 $g_i$ 是凸函数，$f$ 是凸函数吗？</p>
+<div class="answer">是。$h(z) = \ln(\sum e^{z_i})$ 是凸函数且在每变量上非减，复合每个凸的 $g_i$，由向量函数复合规则，$f$ 是凸函数。</div>
+<button class="toggle-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+</div>
+</div>
+
+<div class="footer">
+  优化理论 · 第5章 凸函数 | 上海财经大学 · 郭加熠 | 基于34页课件整理
+</div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</body>
+</html>
