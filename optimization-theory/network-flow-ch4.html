@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优化理论 · 第4章 · 网络流</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8f9fa; color: #1a1a2e; line-height:1.7; }
+.container { max-width:960px; margin:0 auto; padding:20px; }
+.header { background: linear-gradient(135deg,#b91c1c 0%,#dc2626 100%); color:#fff; padding:40px 0; text-align:center; border-radius:0 0 20px 20px; margin-bottom:30px; }
+.header h1 { font-size:28px; margin-bottom:8px; }
+.header .sub { color:#fca5a5; font-size:14px; }
+.header .info { color:#fecaca; font-size:13px; margin-top:8px; }
+.card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size:20px; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #e2e8f0; }
+.card h2 .tag { font-size:12px; background:#dc2626; color:#fff; padding:2px 10px; border-radius:12px; margin-left:8px; vertical-align:middle; }
+.card h3 { font-size:16px; margin:16px 0 8px; color:#2d3748; }
+.toc { background:#fef2f2; border-radius:12px; padding:20px; margin-bottom:20px; }
+.toc h3 { font-size:16px; margin-bottom:12px; }
+.toc a { display:block; padding:4px 0; color:#b91c1c; text-decoration:none; font-size:14px; }
+.toc a:hover { text-decoration:underline; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+th { background:#fef2f2; text-align:left; padding:10px 12px; font-weight:600; }
+td { padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+pre { background:#1e1e2e; color:#cdd6f4; border-radius:8px; padding:16px; overflow-x:auto; font-size:13px; line-height:1.6; margin:12px 0; }
+code { font-family:'JetBrains Mono','Fira Code',monospace; }
+:not(pre) > code { background:#fef2f2; padding:2px 6px; border-radius:4px; font-size:13px; }
+.info-box { background:#fef2f2; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.warn-box { background:#fff5f5; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.tip-box { background:#f0fff4; border-radius:8px; padding:14px; margin:8px 0; font-size:14px; }
+.quiz { margin:12px 0; padding:14px; background:#faf5ff; border-radius:8px; border-left:3px solid #dc2626; }
+.quiz p { font-weight:500; }
+.quiz .answer { display:none; margin-top:8px; padding:10px; background:#fff; border-radius:6px; font-size:14px; }
+.quiz .toggle-btn { background:#dc2626; color:#fff; border:none; padding:4px 14px; border-radius:4px; cursor:pointer; font-size:12px; margin-top:6px; }
+.footer { text-align:center; font-size:12px; color:#a0aec0; padding:30px 0; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+@media (max-width:640px) { .grid-2 { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>优化理论 · 第4章</h1>
+  <div class="sub">网络流 (Network Flow)</div>
+  <div class="info">上海财经大学 · 郭加熠 · 54页课件</div>
+</div>
+
+<div class="toc">
+  <h3>学习地图</h3>
+  <a href="#def">1 基本概念</a>
+  <a href="#maxflow">2 最大流问题</a>
+  <a href="#mincut">3 最小割问题</a>
+  <a href="#maxflow-mincut">4 最大流-最小割定理</a>
+  <a href="#algo">5 算法</a>
+  <a href="#mincost">6 最小费用流</a>
+  <a href="#tum">7 全单位模性 (TUM)</a>
+  <a href="#apps">8 应用：AGV调度</a>
+  <a href="#mistakes">9 易错点</a>
+  <a href="#quiz">10 自测题</a>
+</div>
+
+<!-- ========== 1 ========== -->
+<div class="card" id="def">
+<h2>1 基本概念</h2>
+<p><strong>来源：</strong>课件第6-7页</p>
+
+<h3>有向图</h3>
+<div class="info-box">
+<strong>G = (V, E)</strong><br>
+- V = 顶点集（vertices）<br>
+- E ⊆ V × V = 有向边集（directed edges）<br>
+- (i, j) 表示从顶点 i 到 j 的有向边
+</div>
+
+<h3>网络流</h3>
+<div class="info-box">
+<strong>G = (V, E, s, t, U)</strong><br>
+- s = 源点 (source)<br>
+- t = 汇点 (sink)<br>
+- <strong>容量</strong>：每条边 (i,j) 有容量 u<sub>ij</sub> ≥ 0<br>
+- 表示一个从源点到汇点的"运输网络"
+</div>
+
+<h3>s-t 流 (Flow)</h3>
+<p><strong>来源：</strong>课件第9页</p>
+<p>每条边上的流量 x<sub>ij</sub> ≥ 0 需满足：</p>
+<div class="info-box">
+<strong>① 容量约束</strong>：0 ≤ x<sub>ij</sub> ≤ u<sub>ij</sub>，∀(i,j)∈E<br><br>
+<strong>② 流量守恒</strong>：∑x<sub>ij</sub> = ∑x<sub>ki</sub>，∀i∈V\{s,t}<br>
+即：除源点汇点外，流入量 = 流出量
+</div>
+
+<div class="tip-box">
+<strong>💡 直觉理解</strong>：就像水管网络——每根水管有最大容量，中间节点不存水，水从源头流到终点。
+</div>
+</div>
+
+<!-- ========== 2 ========== -->
+<div class="card" id="maxflow">
+<h2>2 最大流问题</h2>
+<p><strong>来源：</strong>课件第10-11页</p>
+
+<h3>问题定义</h3>
+<div class="info-box">
+<strong>目标</strong>：从源 s 到汇 t 的总流量最大化<br><br>
+<strong>总流量</strong>：val(x) = ∑x<sub>sj</sub> − ∑x<sub>is</sub>（源点净流出）<br><br>
+<strong>约束</strong>：<br>
+&emsp;① 容量约束：0 ≤ x<sub>ij</sub> ≤ u<sub>ij</sub><br>
+&emsp;② 流量守恒：∑x<sub>ij</sub> = ∑x<sub>ki</sub>，∀i∈V\{s,t}
+</div>
+
+<h3>算法比较</h3>
+<table>
+<tr><th>算法</th><th>复杂度</th><th>特点</th></tr>
+<tr><td><strong>Ford-Fulkerson</strong></td><td>O(m · |f<sub>max</sub>|)</td><td>基础增广路思想，复杂度依赖最大流值</td></tr>
+<tr><td><strong>Edmonds-Karp</strong></td><td>O(nm²)</td><td>BFS 找最短增广路，多项式时间</td></tr>
+<tr><td><strong>Dinic</strong></td><td>O(n²m)</td><td>分层图 + 阻塞流，竞赛中最常用</td></tr>
+<tr><td>Orlin (2013)</td><td>O(nm)</td><td>理论最优界</td></tr>
+</table>
+
+<div class="info-box">
+<strong>考试/面试重点</strong>：Dinic 算法<br>
+- 步骤1：BFS 建分层图（level graph）<br>
+- 步骤2：DFS 找阻塞流（blocking flow）<br>
+- 重复直到源点到不了汇点
+</div>
+</div>
+
+<!-- ========== 3 ========== -->
+<div class="card" id="mincut">
+<h2>3 最小割问题</h2>
+<p><strong>来源：</strong>课件第13-16页</p>
+
+<h3>s-t 割的定义</h3>
+<div class="info-box">
+割 (V<sub>s</sub>, V<sub>t</sub>) 是顶点集 V 的一个划分：<br>
+- V<sub>s</sub> ∩ V<sub>t</sub> = ∅, V<sub>s</sub> ∪ V<sub>t</sub> = V<br>
+- s ∈ V<sub>s</sub>, t ∈ V<sub>t</sub><br><br>
+<strong>割的容量</strong> = 从 V<sub>s</sub> 到 V<sub>t</sub> 的所有边的容量之和<br>
+= ∑{u<sub>ij</sub> : i∈V<sub>s</sub>, j∈V<sub>t</sub>}
+</div>
+
+<div class="info-box">
+<strong>最小割问题</strong>：找到容量最小的 s-t 割<br>
+<strong>整数规划模型</strong>：<br>
+min  ∑u<sub>ij</sub> · y<sub>ij</sub><br>
+s.t. y<sub>ij</sub> = max{z<sub>i</sub> − z<sub>j</sub>, 0}<br>
+&emsp;&emsp;z<sub>s</sub> = 1, z<sub>t</sub> = 0<br>
+&emsp;&emsp;z<sub>i</sub> ∈ {0, 1}
+</div>
+
+<div class="tip-box">
+<strong>💡 理解</strong>：割就是"切断"一些边让 s 到不了 t。最小割就是切最少的容量让网络断开。这在图像分割、网络可靠性分析中都有应用。
+</div>
+</div>
+
+<!-- ========== 4 ========== -->
+<div class="card" id="maxflow-mincut">
+<h2>4 最大流-最小割定理</h2>
+<p><strong>来源：</strong>课件第15-19页</p>
+
+<div class="info-box" style="background:#f0fff4; border-left:4px solid #16a34a; font-size:16px; text-align:center; padding:20px;">
+<strong>核心定理</strong><br><br>
+最大流的值 = 最小割的容量<br><br>
+即：max{val(f)} = min{cap(V<sub>s</sub>, V<sub>t</sub>)}
+</div>
+
+<div class="info-box">
+<strong>证明思路</strong>：<br>
+1. 对于任意可行流 f 和任意割 (V<sub>s</sub>, V<sub>t</sub>)：<br>
+&emsp;val(f) = f(V<sub>s</sub>, V<sub>t</sub>) − f(V<sub>t</sub>, V<sub>s</sub>) ≤ cap(V<sub>s</sub>, V<sub>t</sub>)<br>
+2. 当算法终止（无增广路），找到的割恰好达到等号
+</div>
+
+<table>
+<tr><th>对偶关系</th><th>原始问题</th><th>对偶问题</th></tr>
+<tr><td></td><td>最大流</td><td>最小割</td></tr>
+<tr><td>目标</td><td>最大化</td><td>最小化</td></tr>
+<tr><td>变量</td><td>流 x<sub>ij</sub></td><td>割标记 z<sub>i</sub>, y<sub>ij</sub></td></tr>
+<tr><td>最优值</td><td>相等</td><td>相等</td></tr>
+</table>
+
+<div class="tip-box">
+<strong>💡 意义</strong>：这是线性规划强对偶定理的一个特例。网络流问题的整数解性质（TUM）保证了最优解是整数。
+</div>
+</div>
+
+<!-- ========== 5 ========== -->
+<div class="card" id="algo">
+<h2>5 算法详解</h2>
+
+<h3>5.1 Ford-Fulkerson 增广路</h3>
+<pre><code>Algorithm Ford-Fulkerson:
+  f = 0
+  while 存在增广路 P from s to t:
+    δ = min residual capacity on P
+    沿 P 增加流 δ
+  return f</code></pre>
+
+<h3>5.2 Edmonds-Karp（BFS）</h3>
+<pre><code>与 FF 相同，但找增广路时：
+  - 用 BFS 找最短路径（边数最少）
+  - 保证 O(nm²) 时间
+  - 避免 FF 的低效（如容量为无理数时的无限循环）</code></pre>
+
+<h3>5.3 Dinic（竞赛之王）</h3>
+<pre><code>Algorithm Dinic:
+  f = 0
+  while BFS from s to t 可建立分层图:
+    在分层图上 DFS 找阻塞流
+    累加 f
+  return f
+  
+核心优化：
+  - 当前弧优化（cur[i]）：记录每个点已经搜到哪条边
+  - 多路增广：一次 DFS 找到多条增广路</code></pre>
+
+<div class="info-box">
+<strong>考试重点：Dinic 手算步骤</strong><br>
+1. BFS 从 s 到 t，给每个点标层数（level）<br>
+2. 在分层图上 DFS 找增广路到 t<br>
+3. 计算路径上的最小剩余容量<br>
+4. 更新流量<br>
+5. 重复直到 BFS 到不了 t
+</div>
+</div>
+
+<!-- ========== 6 ========== -->
+<div class="card" id="mincost">
+<h2>6 最小费用流</h2>
+<p><strong>来源：</strong>课件第24-30页</p>
+
+<h3>6.1 运输问题（Transportation）</h3>
+<div class="info-box">
+<strong>设定</strong>：供应点 i（供应量 s<sub>i</sub>）→ 需求点 j（需求量 d<sub>j</sub>）<br>
+<strong>成本</strong>：每单位运输成本 c<sub>ij</sub><br><br>
+<strong>模型</strong>：<br>
+min ∑c<sub>ij</sub>x<sub>ij</sub><br>
+s.t. ∑x<sub>ij</sub> = s<sub>i</sub>, ∀i<br>
+&emsp;&emsp;∑x<sub>ij</sub> = d<sub>j</sub>, ∀j<br>
+&emsp;&emsp;x<sub>ij</sub> ≥ 0
+</div>
+
+<h3>6.2 最小费用流</h3>
+<div class="info-box">
+<strong>G = (V, E, U, C, D)</strong><br>
+- u<sub>ij</sub>: 容量<br>
+- c<sub>ij</sub>: 单位流量成本<br>
+- d<sub>i</sub>: 节点 i 的净需求（供应为正，需求为负）<br><br>
+<strong>模型</strong>：<br>
+min ∑c<sub>ij</sub>x<sub>ij</sub><br>
+s.t. ∑x<sub>ki</sub> − ∑x<sub>ij</sub> = d<sub>i</sub>, ∀i（流量守恒 + 供需）<br>
+&emsp;&emsp;0 ≤ x<sub>ij</sub> ≤ u<sub>ij</sub>
+</div>
+
+<h3>6.3 最小费用最大流</h3>
+<div class="info-box">
+先跑最大流找 f*，再在流量 = f* 的约束下最小化费用。<br><br>
+<strong>算法</strong>：Successive Shortest Augmenting Path<br>
+- 在残量网络上用 <strong>Bellman-Ford / Dijkstra（有势）</strong><br> 
+- 每次找 s→t 最短（最便宜）的增广路<br>
+- 增广直到最大流量
+</div>
+</div>
+
+<!-- ========== 7 ========== -->
+<div class="card" id="tum">
+<h2>7 全单位模性（TUM）</h2>
+<p><strong>来源：</strong>课件第32-38页</p>
+
+<h3>为什么网络流的整数解自动成立？</h3>
+<div class="info-box">
+<strong>全单位模矩阵 (TUM)</strong>：所有方子矩阵的行列式 ∈ {−1, 0, 1}<br><br>
+<strong>定理</strong>：如果约束矩阵 A 是 TUM，b 是整数向量，则 {Ax = b, x ≥ 0} 的所有顶点解都是整数解。
+</div>
+
+<h3>节点-边关联矩阵</h3>
+<div class="info-box">
+对于有向图 G = (V, E)，节点-边关联矩阵 A ∈ ℝ<sup>n×m</sup>：<br>
+A<sub>ij</sub> = −1（边 j 离开顶点 i）<br>
+A<sub>ij</sub> = 1（边 j 进入顶点 i）<br>
+A<sub>ij</sub> = 0（其他）<br><br>
+<strong>A 是 TUM</strong> ← 这就是为什么网络流的 LP 解自动是整数！
+</div>
+
+<div class="info-box">
+<strong>推论</strong>：<br>
+- 最大流、最小割、最小费用流、运输问题<br>
+- 所有这些都是 LP，但因为 TUM，解自动整数<br>
+- 不需要用整数规划求解器，用 LP 就够<br>
+- 考试中可以说"由于约束矩阵是全单位模的，解自动为整数"
+</div>
+</div>
+
+<!-- ========== 8 ========== -->
+<div class="card" id="apps">
+<h2>8 应用：AGV 调度案例</h2>
+<p><strong>来源：</strong>课件第40-52页</p>
+
+<h3>问题描述</h3>
+<div class="info-box">
+<strong>AGV（自动导引车）调度优化</strong><br>
+- 有多个 AGV（车辆）、充电站（stations）、工位（workstations）<br>
+- 目标：安排 AGV 到充电站、充电站到工位<br>
+- 约束：每个 AGV 去一个站、每站一个 AGV、每站一个工位、工位容量
+
+</div>
+
+<h3>模型</h3>
+<pre><code>决策变量：
+  x_ij ∈ {0,1}: AGV i → 充电站 j
+  y_jk ∈ {0,1}: 充电站 j → 工位 k
+
+约束：
+  ∑x_ij ≤ 1 ∀i         (每个 AGV 最多一个站)
+  ∑x_ij ≤ 1 ∀j         (每个站最多一个 AGV)
+  ∑y_jk ≤ 1 ∀j         (每个站最多一个工位)
+  ∑y_jk ≤ 3 ∀k         (每个工位最多 3 个站)
+  ∑x_ij = ∑y_jk ∀j     (站的一致性：有 AGV 才有工位)
+
+最大流版本：最大化 AGV 使用数
+max ∑∑ x_ij
+
+最小费用版：最小化总行驶距离
+min ∑ c1_ij·x_ij + ∑ c2_jk·y_jk</code></pre>
+
+<div class="tip-box">
+<strong>💡 和你的大创的联系</strong>：AGV 调度 = 二分图匹配 + 资源分配。你的 MIL attention 也在做"资源分配"——把 attention 权重分配给最重要的 utterance。抽象的数学模型可以跨越完全不同的应用领域。
+</div>
+</div>
+
+<!-- ========== 9 ========== -->
+<div class="card" id="mistakes">
+<h2>9 易错点</h2>
+
+<table>
+<tr><th>#</th><th>易错点</th><th>正确理解</th><th>来源</th></tr>
+<tr><td>1</td><td><b>流量守恒忘了 s 和 t</b></td><td>守恒条件对 <strong>中间节点</strong> 成立，s 和 t 不守恒（s 净流出，t 净流入）</td><td>p9</td></tr>
+<tr><td>2</td><td><b>割的容量 = 所有跨割边之和</b></td><td>只算 V<sub>s</sub>→V<sub>t</sub> 的边，不算 V<sub>t</sub>→V<sub>s</sub> 的（反向边不算）</td><td>p13</td></tr>
+<tr><td>3</td><td><b>Ford-Fulkerson 复杂度误解</b></td><td>O(m·|f|)，如果最大流值很大或容量无理数，可能极慢。Edmonds-Karp 用 BFS 解决</td><td>p11</td></tr>
+<tr><td>4</td><td><b>TUM 适用范围</b></td><td>节点-边关联矩阵是 TUM，但<strong>加了额外约束后可能就不是了</strong></td><td>p35-38</td></tr>
+<tr><td>5</td><td><b>残量网络忘记反向边</b></td><td>每次增广后，要加反向边（容量 = 已用的流量）。Dinic 算法中"反向边退流"是核心机制</td><td>标准</td></tr>
+<tr><td>6</td><td><b>最小费用流的势函数</b></td><td>Dijkstra 在有负边权的图中不能用，但<strong>用势函数 (potential) 可以转换为非负权</strong></td><td>p27</td></tr>
+</table>
+</div>
+
+<!-- ========== 10 ========== -->
+<div class="card" id="quiz">
+<h2>10 自测题</h2>
+
+<div class="quiz">
+<p><strong>题1（基础）</strong></p>
+<p>一个网络流有 5 个节点、8 条边。Dinic 算法的一轮迭代中，BFS 做了什么？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+BFS 从源点 s 出发，计算每个点到 s 的最短距离（按边数），建立分层图。<br>
+如果 BFS 到达不了 t，算法终止。<br>
+如果到了 t，下一阶段只在分层图上用 DFS 找增广路。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题2（定理理解）</strong></p>
+<p>解释"最大流 = 最小割"定理为什么成立？这个定理直接推了什么？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+对偶性。最大流是"最大化从 s 到 t 的流量"，最小割是"最小化切断 s 到 t 所需容量"。<br>
+线性规划强对偶定理保证两者相等。<br><br>
+直接推论：<br>
+① 最大流算法的终止条件（无增广路）同时证明了最小割<br>
+② 可以在 O(n²m) 时间内同时算最大流和最小割
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题3（应用）</strong></p>
+<p>运输问题为什么不需要整数约束，解自动是整数？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+约束矩阵是节点-边关联矩阵（每列两个非零元：1 和 -1），这是全单位模矩阵（TUM）。<br>
+TUM 的性质：任何方子矩阵的行列式 ∈ {−1,0,1}。<br>
+当约束矩阵是 TUM、右侧 b 是整数时，LP 的顶点解自动是整数。<br>
+所以运输问题不需要声明 x_ij ∈ {0,1}，x_ij ≥ 0 就够了。
+</div>
+</div>
+
+<div class="quiz">
+<p><strong>题4（计算）</strong></p>
+<p>一个网络有 3 条从 s 到 t 的路径。路径 A 容量 5，B 容量 3，C 容量 2。所有路径共享一段容量为 6 的公共边。最大流是多少？</p>
+<button class="toggle-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+<div class="answer">
+由于公共边容量为 6，三条路径总需求 5+3+2=10，但公共边只能过 6。<br>
+最大流 = 6。<br>
+最小割 = 公共边的容量 6（或从源点到三个路径起点的某个组合，但最少是 6）。<br>
+最大流 = 最小割 = 6 ✅
+</div>
+</div>
+</div>
+
+<div class="footer">
+school-notes/optimization-theory/ · 上海财经大学 · 郭加熠 · 第4章 · 54页课件
+</div>
+
+</div>
+<script>
+document.querySelectorAll('.toggle-btn').forEach(function(b){b.addEventListener('click',function(){var a=this.nextElementSibling;if(a&&a.classList.contains('answer'))a.style.display='block'})});
+</script>
+</body>
+</html>
